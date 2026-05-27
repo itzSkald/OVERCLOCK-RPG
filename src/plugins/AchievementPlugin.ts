@@ -1,4 +1,5 @@
-import type { IPlugin, IEngine, GameState, GameEvent } from '../engine/types';
+import type { IPlugin, IEngine, GameState, GameEvent, Player } from '../engine/types';
+import type { AuthPlugin } from './AuthPlugin';
 
 export interface AchievementDef {
   id: string;
@@ -125,6 +126,13 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   },
 ];
 
+interface AchievementStatsRow {
+  user_id: string;
+  total_kills: number;
+  total_boss_kills: number;
+  total_skills_used: number;
+}
+
 export class AchievementPlugin implements IPlugin {
   id = 'achievement';
   dependencies = ['auth'];
@@ -137,45 +145,91 @@ export class AchievementPlugin implements IPlugin {
   private unsubs: Array<() => void> = [];
   private userId: string | null = null;
   private ctx: AchievementContext = { totalKills: 0, totalBossKills: 0, totalSkillsUsed: 0 };
+  private sessionKills = 0;
+  private sessionBossKills = 0;
+  private sessionSkillsUsed = 0;
   private checkTimer: ReturnType<typeof setInterval> | null = null;
+  private saveStatsTimer: ReturnType<typeof setInterval> | null = null;
 
   async init(engine: IEngine): Promise<void> {
     this.engine = engine;
 
     engine.storage.registerTable(this.id, { table: 'achievements', userScoped: true });
+    engine.storage.registerTable('achievement_stats', { table: 'achievement_stats', userScoped: true });
 
     this.unsubs.push(
-      engine.on('auth_success', (event: GameEvent<{ userId: string }>) => {
-        this.userId = event.payload.userId;
+      engine.on('auth_success', (event: GameEvent<Player>) => {
+        this.userId = event.payload.id;
         void this.loadAchievements();
       })
     );
 
+    // Handle already-logged-in users
+    const existingPlayer = engine.getPlugin<AuthPlugin>('auth')?.getPlayer();
+    if (existingPlayer) {
+      this.userId = existingPlayer.id;
+      void this.loadAchievements();
+    }
+
     this.unsubs.push(
       engine.on('enemy_death', (event: GameEvent<{ enemy: { isBoss: boolean } }>) => {
         this.ctx.totalKills++;
-        if (event.payload.enemy.isBoss) this.ctx.totalBossKills++;
+        this.sessionKills++;
+        if (event.payload.enemy.isBoss) {
+          this.ctx.totalBossKills++;
+          this.sessionBossKills++;
+        }
       })
     );
 
     this.unsubs.push(
       engine.on('skill_activated', () => {
         this.ctx.totalSkillsUsed++;
+        this.sessionSkillsUsed++;
       })
     );
 
     this.checkTimer = setInterval(() => this.checkAchievements(), 2000);
+    // Persist stats every 30 seconds
+    this.saveStatsTimer = setInterval(() => void this.saveStats(), 30000);
   }
 
   private async loadAchievements(): Promise<void> {
     if (!this.userId) return;
 
-    const { data } = await this.engine.storage.loadMany('achievements', { user_id: this.userId });
-    if (data) {
-      this.unlockedList = data as UnlockedAchievement[];
+    const [achievementsResult, statsResult] = await Promise.all([
+      this.engine.storage.loadMany('achievements', { user_id: this.userId }),
+      this.engine.storage.load<AchievementStatsRow>('achievement_stats', { user_id: this.userId }),
+    ]);
+
+    if (achievementsResult.data) {
+      this.unlockedList = achievementsResult.data as UnlockedAchievement[];
       this.unlocked = new Set(this.unlockedList.map(a => a.achievement_id));
     }
+
+    if (statsResult.data) {
+      this.ctx.totalKills = statsResult.data.total_kills;
+      this.ctx.totalBossKills = statsResult.data.total_boss_kills;
+      this.ctx.totalSkillsUsed = statsResult.data.total_skills_used;
+    }
+
     this.notify();
+  }
+
+  private async saveStats(): Promise<void> {
+    if (!this.userId || (this.sessionKills === 0 && this.sessionBossKills === 0 && this.sessionSkillsUsed === 0)) return;
+
+    await this.engine.storage.save('achievement_stats', {
+      user_id: this.userId,
+      total_kills: this.ctx.totalKills,
+      total_boss_kills: this.ctx.totalBossKills,
+      total_skills_used: this.ctx.totalSkillsUsed,
+      updated_at: new Date().toISOString(),
+    }, 'user_id');
+
+    this.sessionKills = 0;
+    this.sessionBossKills = 0;
+    this.sessionSkillsUsed = 0;
   }
 
   private checkAchievements(): void {
@@ -235,12 +289,17 @@ export class AchievementPlugin implements IPlugin {
   }
 
   cleanup(): void {
+    void this.saveStats();
     for (const unsub of this.unsubs) unsub();
     this.unsubs = [];
     this.listeners = [];
     if (this.checkTimer) {
       clearInterval(this.checkTimer);
       this.checkTimer = null;
+    }
+    if (this.saveStatsTimer) {
+      clearInterval(this.saveStatsTimer);
+      this.saveStatsTimer = null;
     }
   }
 }

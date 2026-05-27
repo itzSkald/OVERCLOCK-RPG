@@ -1,4 +1,5 @@
-import type { IPlugin, IEngine, GameState, GameEvent } from '../engine/types';
+import type { IPlugin, IEngine, GameState, GameEvent, Player } from '../engine/types';
+import type { AuthPlugin } from './AuthPlugin';
 
 export interface DailyChallenge {
   id: string;
@@ -75,11 +76,18 @@ export class DailyPlugin implements IPlugin {
     engine.storage.registerTable(this.id, { table: 'daily_challenges', userScoped: true });
 
     this.unsubs.push(
-      engine.on('auth_success', (event: GameEvent<{ userId: string }>) => {
-        this.userId = event.payload.userId;
+      engine.on('auth_success', (event: GameEvent<Player>) => {
+        this.userId = event.payload.id;
         void this.loadOrGenerateChallenges();
       })
     );
+
+    // Handle already-logged-in users (auth_success may have fired before this plugin inited)
+    const existingPlayer = engine.getPlugin<AuthPlugin>('auth')?.getPlayer();
+    if (existingPlayer) {
+      this.userId = existingPlayer.id;
+      void this.loadOrGenerateChallenges();
+    }
 
     this.unsubs.push(
       engine.on('enemy_death', (event: GameEvent<{ enemy: { isBoss: boolean } }>) => {
