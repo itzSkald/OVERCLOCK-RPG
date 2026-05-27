@@ -6,6 +6,7 @@ import { getComponentBulkCost, getComponentDps } from '../../plugins/ComponentPl
 import type { ComponentPlugin } from '../../plugins/ComponentPlugin';
 import type { ComponentDef } from '../../engine/types';
 import type { OverclockPlugin } from '../../plugins/OverclockPlugin';
+import { Tooltip, TooltipLabel, TooltipText, TooltipStat } from './Tooltip';
 
 type PurchaseMode = 1 | 10 | 100 | 'max';
 
@@ -61,14 +62,27 @@ const ComponentCard: React.FC<{
       }}
     >
       <div className="flex justify-between items-start mb-1">
-        <div>
-          <div className="font-pixel" style={{ color: colors.text, fontSize: '8px', marginBottom: 3 }}>
-            {comp.name}
+        <Tooltip
+          position="right"
+          content={
+            <>
+              <TooltipLabel label={comp.name} color={colors.text} />
+              <TooltipText>{comp.description}</TooltipText>
+              <TooltipStat label="Level" value={`${comp.level}`} color={colors.text} />
+              <TooltipStat label="DPS/lvl" value={`${formatNumber(comp.baseDps ?? dps / Math.max(1, comp.level))}`} color="#5a7a8a" />
+              <TooltipStat label="Total DPS" value={`${formatNumber(dps)}/s`} color={colors.text} />
+            </>
+          }
+        >
+          <div>
+            <div className="font-pixel" style={{ color: colors.text, fontSize: '8px', marginBottom: 3, cursor: 'help' }}>
+              {comp.name}
+            </div>
+            <div style={{ color: '#5a6a7a', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>
+              {comp.description}
+            </div>
           </div>
-          <div style={{ color: '#5a6a7a', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>
-            {comp.description}
-          </div>
-        </div>
+        </Tooltip>
         <div className="font-pixel" style={{ color: '#5a6a7a', fontSize: '7px', textAlign: 'right' }}>
           LVL<br />
           <span style={{ color: colors.text, fontSize: '9px' }}>{comp.level}</span>

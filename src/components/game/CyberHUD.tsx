@@ -5,6 +5,7 @@ import { useGameState } from '../../hooks/useGameState';
 import { getTotalIdleDps } from '../../plugins/ComponentPlugin';
 import type { AuthPlugin } from '../../plugins/AuthPlugin';
 import type { LeaderboardPlugin } from '../../plugins/LeaderboardPlugin';
+import { Tooltip, TooltipLabel, TooltipText } from './Tooltip';
 
 interface CyberHUDProps {
   engine: GameEngine;
@@ -49,36 +50,44 @@ export const CyberHUD: React.FC<CyberHUDProps> = ({ engine, playerHandle }) => {
       style={{ background: '#0d0d1a', borderColor: '#1a2a3a', borderTop: 'none', borderLeft: 'none', borderRight: 'none', minHeight: 48, gap: 8 }}
     >
       {/* Stage */}
-      <div className="flex items-center gap-2">
-        <div style={{ color: '#5a6a7a', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>STG</div>
-        <div className="font-pixel glow-cyan" style={{ color: '#00f5ff', fontSize: '12px' }}>
-          {stage}
+      <Tooltip content={<><TooltipLabel label="STAGE" /><TooltipText>Current enemy stage. Every 10th is a boss.</TooltipText></>} position="bottom">
+        <div className="flex items-center gap-2">
+          <div style={{ color: '#5a6a7a', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>STG</div>
+          <div className="font-pixel glow-cyan" style={{ color: '#00f5ff', fontSize: '12px' }}>
+            {stage}
+          </div>
         </div>
-      </div>
+      </Tooltip>
 
       {/* DPS */}
-      <div className="flex items-center gap-2">
-        <div style={{ color: '#5a6a7a', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>DPS</div>
-        <div className="font-pixel glow-green" style={{ color: '#39ff14', fontSize: '10px' }}>
-          {formatNumber(idleDps)}
+      <Tooltip content={<><TooltipLabel label="IDLE DPS" color="#39ff14" /><TooltipText>Damage per second from hardware modules. Attacks automatically.</TooltipText></>} position="bottom">
+        <div className="flex items-center gap-2">
+          <div style={{ color: '#5a6a7a', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>DPS</div>
+          <div className="font-pixel glow-green" style={{ color: '#39ff14', fontSize: '10px' }}>
+            {formatNumber(idleDps)}
+          </div>
         </div>
-      </div>
+      </Tooltip>
 
       {/* Gold */}
-      <div className="flex items-center gap-2">
-        <div style={{ color: '#ffaa00', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>◆</div>
-        <div className="font-pixel glow-amber" style={{ color: '#ffaa00', fontSize: '10px' }}>
-          {formatNumber(gold)}
+      <Tooltip content={<><TooltipLabel label="GOLD" color="#ffaa00" /><TooltipText>Currency earned from defeating enemies. Spend on hardware modules.</TooltipText></>} position="bottom">
+        <div className="flex items-center gap-2">
+          <div style={{ color: '#ffaa00', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>◆</div>
+          <div className="font-pixel glow-amber" style={{ color: '#ffaa00', fontSize: '10px' }}>
+            {formatNumber(gold)}
+          </div>
         </div>
-      </div>
+      </Tooltip>
 
       {/* Overclocks */}
-      <div className="flex items-center gap-2">
-        <div style={{ color: '#5a6a7a', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>OC</div>
-        <div className="font-pixel glow-pink" style={{ color: '#ff0080', fontSize: '10px' }}>
-          {overclocks}
+      <Tooltip content={<><TooltipLabel label="OVERCLOCK TOKENS" color="#ff0080" /><TooltipText>Prestige currency. Reset progress for permanent upgrades.</TooltipText></>} position="bottom">
+        <div className="flex items-center gap-2">
+          <div style={{ color: '#5a6a7a', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>OC</div>
+          <div className="font-pixel glow-pink" style={{ color: '#ff0080', fontSize: '10px' }}>
+            {overclocks}
+          </div>
         </div>
-      </div>
+      </Tooltip>
 
       {/* Online */}
       {onlineCount > 0 && (

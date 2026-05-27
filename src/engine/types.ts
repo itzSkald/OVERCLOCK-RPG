@@ -34,7 +34,9 @@ export type GameEventType =
   | 'item_drop'
   | 'item_equipped'
   | 'item_unequipped'
-  | 'mobo_upgrade';
+  | 'mobo_upgrade'
+  | 'daily_completed'
+  | 'achievement_unlocked';
 
 export interface GameEvent<T = unknown> {
   type: GameEventType;

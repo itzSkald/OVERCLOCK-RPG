@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CircuitBoard, Zap, ChevronDown, Trophy } from 'lucide-react';
+import { CircuitBoard, Zap, ChevronDown, Trophy, Clock, Award } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import type { Player } from '../../engine/types';
 import { CyberHUD } from './CyberHUD';
@@ -9,7 +9,11 @@ import { OverclockPanel } from './OverclockPanel';
 import { MotherboardScreen } from './MotherboardScreen';
 import { OverclockScreen } from './OverclockScreen';
 import { LeaderboardScreen } from './LeaderboardScreen';
+import { DailiesScreen } from './DailiesScreen';
+import { AchievementsScreen } from './AchievementsScreen';
+import { AchievementToast } from './AchievementToast';
 import { useGameState } from '../../hooks/useGameState';
+import { Tooltip, TooltipLabel, TooltipText } from './Tooltip';
 import type { OverclockPlugin } from '../../plugins/OverclockPlugin';
 
 interface GameScreenProps {
@@ -93,6 +97,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
   const [showMotherboard, setShowMotherboard] = useState(false);
   const [showOverclockPopup, setShowOverclockPopup] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showDailies, setShowDailies] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const [mobileDrawer, setMobileDrawer] = useState<MobileDrawer>(null);
 
   const inventoryCount = useGameState(engine, s => (s.inventory ?? []).length);
@@ -123,6 +129,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
         {/* Modals */}
         {showMotherboard && <MotherboardScreen engine={engine} onClose={() => setShowMotherboard(false)} />}
         {showLeaderboard && <LeaderboardScreen engine={engine} onClose={() => setShowLeaderboard(false)} />}
+        {showDailies && <DailiesScreen engine={engine} onClose={() => setShowDailies(false)} />}
+        {showAchievements && <AchievementsScreen engine={engine} onClose={() => setShowAchievements(false)} />}
+        <AchievementToast engine={engine} />
 
         <CyberHUD engine={engine} playerHandle={player.handle} />
 
@@ -144,7 +153,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
         <div
           style={{
             flexShrink: 0,
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
             background: '#050010',
             borderTop: '1px solid #1a1a2a',
           }}
@@ -204,23 +213,40 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
             )}
           </button>
 
-          {/* Leaderboard tab */}
+          {/* Dailies tab */}
           <button
-            onClick={() => setShowLeaderboard(true)}
+            onClick={() => setShowDailies(true)}
             style={{
               background: 'transparent',
               border: 'none',
-              borderLeft: '1px solid #1a1a2a',
               borderTop: '2px solid transparent',
               color: '#3a4a5a',
-              padding: '10px 8px',
+              padding: '10px 4px',
               cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
               transition: 'all 0.15s',
             }}
           >
-            <Trophy size={14} color="#3a4a5a" />
-            <span className="font-pixel" style={{ fontSize: '7px', letterSpacing: '1px' }}>RANKS</span>
+            <Clock size={12} color="#3a4a5a" />
+            <span className="font-pixel" style={{ fontSize: '6px', letterSpacing: '0.5px' }}>DAILY</span>
+          </button>
+
+          {/* Achievements tab */}
+          <button
+            onClick={() => setShowAchievements(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderTop: '2px solid transparent',
+              color: '#3a4a5a',
+              padding: '10px 4px',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+              transition: 'all 0.15s',
+            }}
+          >
+            <Award size={12} color="#3a4a5a" />
+            <span className="font-pixel" style={{ fontSize: '6px', letterSpacing: '0.5px' }}>FEATS</span>
           </button>
         </div>
 
@@ -259,6 +285,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
       {showMotherboard && <MotherboardScreen engine={engine} onClose={() => setShowMotherboard(false)} />}
       {showOverclockPopup && <OverclockScreen engine={engine} onClose={() => setShowOverclockPopup(false)} />}
       {showLeaderboard && <LeaderboardScreen engine={engine} onClose={() => setShowLeaderboard(false)} />}
+      {showDailies && <DailiesScreen engine={engine} onClose={() => setShowDailies(false)} />}
+      {showAchievements && <AchievementsScreen engine={engine} onClose={() => setShowAchievements(false)} />}
+      <AchievementToast engine={engine} />
 
       <CyberHUD engine={engine} playerHandle={player.handle} />
 
@@ -309,9 +338,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
           </div>
 
           {/* Motherboard / Hardware */}
+          <Tooltip content={<><TooltipLabel label="HARDWARE" color="#39ff14" /><TooltipText>Equip dropped items to boost stats. Manage your motherboard slots.</TooltipText></>} position="left">
           <button
             onClick={() => setShowMotherboard(true)}
             style={{
+              width: '100%',
               background: inventoryCount > 0 ? '#031a10' : '#080810',
               border: `1px solid ${inventoryCount > 0 ? '#39ff1455' : '#1a2a2a'}`,
               color: inventoryCount > 0 ? '#39ff14' : '#2a3a4a',
@@ -344,11 +375,14 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
               </div>
             )}
           </button>
+          </Tooltip>
 
           {/* Overclock */}
+          <Tooltip content={<><TooltipLabel label="OVERCLOCK" color="#ff0080" /><TooltipText>Spend OCT on permanent upgrades. Resets progress but you come back stronger.</TooltipText></>} position="left">
           <button
             onClick={() => setShowOverclockPopup(true)}
             style={{
+              width: '100%',
               background: availableOCT > 0 ? '#130010' : '#080808',
               border: `1px solid ${availableOCT > 0 ? '#ff008055' : '#1a1a2a'}`,
               color: availableOCT > 0 ? '#ff0080' : '#2a2a3a',
@@ -381,11 +415,14 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
               </div>
             )}
           </button>
+          </Tooltip>
 
           {/* Leaderboard */}
+          <Tooltip content={<><TooltipLabel label="LEADERBOARD" /><TooltipText>Global rankings. Compete with other players by stage and overclock count.</TooltipText></>} position="left">
           <button
             onClick={() => setShowLeaderboard(true)}
             style={{
+              width: '100%',
               background: '#080810',
               border: '1px solid #0a2838',
               color: '#2a4a5a',
@@ -408,6 +445,67 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
             <Trophy size={22} />
             <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>RANKS</div>
           </button>
+          </Tooltip>
+
+          {/* Daily Challenges */}
+          <Tooltip content={<><TooltipLabel label="DAILY OPS" color="#00f5ff" /><TooltipText>Complete rotating challenges for gold rewards. Resets every 24h.</TooltipText></>} position="left">
+          <button
+            onClick={() => setShowDailies(true)}
+            style={{
+              width: '100%',
+              background: '#080810',
+              border: '1px solid #0a2838',
+              color: '#2a4a5a',
+              padding: '14px 10px',
+              cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = '#00f5ff';
+              e.currentTarget.style.color = '#00f5ff';
+              e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = '#0a2838';
+              e.currentTarget.style.color = '#2a4a5a';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <Clock size={22} />
+            <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>DAILY OPS</div>
+          </button>
+          </Tooltip>
+
+          {/* Achievements */}
+          <Tooltip content={<><TooltipLabel label="ACHIEVEMENTS" color="#ffaa00" /><TooltipText>Permanent milestones. Track your progress across all runs.</TooltipText></>} position="left">
+          <button
+            onClick={() => setShowAchievements(true)}
+            style={{
+              width: '100%',
+              background: '#080810',
+              border: '1px solid #1a1a0a',
+              color: '#2a3a2a',
+              padding: '14px 10px',
+              cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = '#ffaa00';
+              e.currentTarget.style.color = '#ffaa00';
+              e.currentTarget.style.boxShadow = '0 0 14px rgba(255,170,0,0.2)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = '#1a1a0a';
+              e.currentTarget.style.color = '#2a3a2a';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <Award size={22} />
+            <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>FEATS</div>
+          </button>
+          </Tooltip>
         </div>
       </div>
     </div>

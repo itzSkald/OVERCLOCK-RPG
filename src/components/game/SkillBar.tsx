@@ -5,6 +5,7 @@ import type { SkillPlugin } from '../../plugins/SkillPlugin';
 import { SKILLS } from '../../plugins/SkillPlugin';
 import { useGameState } from '../../hooks/useGameState';
 import type { SkillDef, SkillId } from '../../engine/types';
+import { Tooltip, TooltipLabel, TooltipText, TooltipStat } from './Tooltip';
 
 interface SkillBarProps {
   engine: GameEngine;
@@ -47,7 +48,20 @@ function SkillButton({ skill, engine }: { skill: SkillDef; engine: GameEngine })
   const borderColor = isActive ? skill.color : isOnCooldown ? '#1a1a2a' : isLocked ? '#0a0a12' : skill.color + '55';
   const bgColor = isActive ? skill.color + '18' : isLocked ? '#05050a' : '#0a0a12';
 
+  const tooltipContent = (
+    <>
+      <TooltipLabel label={skill.name} color={skill.color} />
+      <TooltipText>{skill.description}</TooltipText>
+      <TooltipStat label="Duration" value={`${skill.duration}s`} color={skill.color} />
+      <TooltipStat label="Cooldown" value={`${skill.cooldown}s`} color="#5a7a8a" />
+      {isLocked && (
+        <TooltipStat label="Unlock" value={`Stage ${skill.unlockStage}`} color="#ff4444" />
+      )}
+    </>
+  );
+
   return (
+    <Tooltip content={tooltipContent} position="top" delay={200}>
     <button
       onClick={handleClick}
       disabled={isLocked || isOnCooldown}
@@ -68,7 +82,6 @@ function SkillButton({ skill, engine }: { skill: SkillDef; engine: GameEngine })
         boxShadow: isActive ? `0 0 12px ${skill.color}44, inset 0 0 8px ${skill.color}22` : 'none',
         opacity: isLocked ? 0.3 : 1,
       }}
-      title={`${skill.name}: ${skill.description}`}
     >
       {/* Cooldown sweep overlay */}
       {isOnCooldown && (
@@ -130,6 +143,7 @@ function SkillButton({ skill, engine }: { skill: SkillDef; engine: GameEngine })
         />
       )}
     </button>
+    </Tooltip>
   );
 }
 

@@ -248,3 +248,14 @@ button { cursor: pointer; font-family: var(--font-pixel); }
 .hp-bar-fill {
   transition: width 0.1s steps(4);
 }
+
+/* Tooltip */
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
