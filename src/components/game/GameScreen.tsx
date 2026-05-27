@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CircuitBoard, Zap, ChevronDown } from 'lucide-react';
+import { CircuitBoard, Zap, ChevronDown, Trophy } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import type { Player } from '../../engine/types';
 import { CyberHUD } from './CyberHUD';
@@ -8,6 +8,7 @@ import { ComponentPanel } from './ComponentPanel';
 import { OverclockPanel } from './OverclockPanel';
 import { MotherboardScreen } from './MotherboardScreen';
 import { OverclockScreen } from './OverclockScreen';
+import { LeaderboardScreen } from './LeaderboardScreen';
 import { useGameState } from '../../hooks/useGameState';
 import type { OverclockPlugin } from '../../plugins/OverclockPlugin';
 
@@ -91,6 +92,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
   const [offlineMsg, setOfflineMsg] = useState<string | null>(null);
   const [showMotherboard, setShowMotherboard] = useState(false);
   const [showOverclockPopup, setShowOverclockPopup] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [mobileDrawer, setMobileDrawer] = useState<MobileDrawer>(null);
 
   const inventoryCount = useGameState(engine, s => (s.inventory ?? []).length);
@@ -120,6 +122,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
       <div style={{ height: '100dvh', background: '#0a0a0f', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Modals */}
         {showMotherboard && <MotherboardScreen engine={engine} onClose={() => setShowMotherboard(false)} />}
+        {showLeaderboard && <LeaderboardScreen engine={engine} onClose={() => setShowLeaderboard(false)} />}
 
         <CyberHUD engine={engine} playerHandle={player.handle} />
 
@@ -141,7 +144,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
         <div
           style={{
             flexShrink: 0,
-            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
             background: '#050010',
             borderTop: '1px solid #1a1a2a',
           }}
@@ -200,6 +203,25 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
               </span>
             )}
           </button>
+
+          {/* Leaderboard tab */}
+          <button
+            onClick={() => setShowLeaderboard(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderLeft: '1px solid #1a1a2a',
+              borderTop: '2px solid transparent',
+              color: '#3a4a5a',
+              padding: '10px 8px',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.15s',
+            }}
+          >
+            <Trophy size={14} color="#3a4a5a" />
+            <span className="font-pixel" style={{ fontSize: '7px', letterSpacing: '1px' }}>RANKS</span>
+          </button>
         </div>
 
         {/* Components drawer */}
@@ -236,6 +258,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
     <div className="flex flex-col" style={{ height: '100dvh', background: '#0a0a0f' }}>
       {showMotherboard && <MotherboardScreen engine={engine} onClose={() => setShowMotherboard(false)} />}
       {showOverclockPopup && <OverclockScreen engine={engine} onClose={() => setShowOverclockPopup(false)} />}
+      {showLeaderboard && <LeaderboardScreen engine={engine} onClose={() => setShowLeaderboard(false)} />}
 
       <CyberHUD engine={engine} playerHandle={player.handle} />
 
@@ -357,6 +380,33 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
                 {availableOCT} OCT FREE
               </div>
             )}
+          </button>
+
+          {/* Leaderboard */}
+          <button
+            onClick={() => setShowLeaderboard(true)}
+            style={{
+              background: '#080810',
+              border: '1px solid #0a2838',
+              color: '#2a4a5a',
+              padding: '14px 10px',
+              cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = '#00f5ff';
+              e.currentTarget.style.color = '#00f5ff';
+              e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = '#0a2838';
+              e.currentTarget.style.color = '#2a4a5a';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <Trophy size={22} />
+            <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>RANKS</div>
           </button>
         </div>
       </div>

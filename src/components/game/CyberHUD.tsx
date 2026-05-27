@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Wifi } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import { useGameState } from '../../hooks/useGameState';
 import { getTotalIdleDps } from '../../plugins/ComponentPlugin';
 import type { AuthPlugin } from '../../plugins/AuthPlugin';
+import type { LeaderboardPlugin } from '../../plugins/LeaderboardPlugin';
 
 interface CyberHUDProps {
   engine: GameEngine;
@@ -23,6 +25,17 @@ export const CyberHUD: React.FC<CyberHUDProps> = ({ engine, playerHandle }) => {
   const components = useGameState(engine, s => s.components);
   const idleDps = getTotalIdleDps(components) * engine.getModifier('idle_dps');
   const [confirming, setConfirming] = useState(false);
+
+  const lbPlugin = engine.getPlugin<LeaderboardPlugin>('leaderboard');
+  const [onlineCount, setOnlineCount] = useState(lbPlugin?.getOnlineCount() ?? 0);
+  const syncOnline = useCallback(() => {
+    setOnlineCount(lbPlugin?.getOnlineCount() ?? 0);
+  }, [lbPlugin]);
+  useEffect(() => {
+    if (!lbPlugin) return;
+    syncOnline();
+    return lbPlugin.subscribe(syncOnline);
+  }, [lbPlugin, syncOnline]);
 
   const handleLogout = () => {
     const authPlugin = engine.getPlugin<AuthPlugin>('auth');
@@ -66,6 +79,16 @@ export const CyberHUD: React.FC<CyberHUDProps> = ({ engine, playerHandle }) => {
           {overclocks}
         </div>
       </div>
+
+      {/* Online */}
+      {onlineCount > 0 && (
+        <div className="flex items-center gap-1">
+          <Wifi size={9} color="#39ff14" />
+          <div className="font-pixel" style={{ color: '#39ff14', fontSize: '8px' }}>
+            {onlineCount}
+          </div>
+        </div>
+      )}
 
       {/* Player + Logout */}
       <div className="flex items-center gap-2">

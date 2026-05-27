@@ -6,6 +6,22 @@
 
 ---
 
+## Checkpoints
+
+Each phase has a "done when" gate. The build must pass (`npm run build`) after every checkpoint.
+
+| Phase | Checkpoint | Done When |
+|-------|-----------|-----------|
+| 1 | Leaderboard + Presence | Leaderboard modal opens, shows ranked players, online count in HUD |
+| 2 | Skills + Enemy Variety | Skill bar renders, skills fire with cooldowns, bosses have phases |
+| 3 | Dailies + Achievements | 3 daily challenges generate, progress tracks, achievements unlock |
+| 4 | Guilds + Raids | Guild CRUD works, chat sends, raid boss HP syncs across clients |
+| 5 | Crafting + Shop | Fuse/Upgrade/Socket operations succeed, shop displays rotating items |
+| 6 | PvP + Seasons | Challenge flow works end-to-end, season rankings persist |
+| 7 | Polish + QoL | Settings modal works, tutorial fires on first login, toasts display |
+
+---
+
 ## Phase 1 — Leaderboard + Real-Time Presence
 
 ### Leaderboard UI
