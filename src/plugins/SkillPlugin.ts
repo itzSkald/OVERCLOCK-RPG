@@ -84,7 +84,7 @@ export class SkillPlugin implements IPlugin {
     const cd = cooldowns[skillId];
 
     if (cd.readyAt > now) return false;
-    if (this.engine.state.stage < skill.unlockStage) return false;
+    if (this.engine.state.highestStage < skill.unlockStage) return false;
 
     const newCd: SkillCooldownState = {
       readyAt: now + skill.cooldown * 1000,
