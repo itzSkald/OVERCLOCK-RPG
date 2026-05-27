@@ -28,6 +28,15 @@ const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   { type: 'tap_damage', label: 'Deal {n} tap damage', targetFn: s => 200 + s * 100, rewardFn: s => 60 + s * 25 },
 ];
 
+const DIAMOND_REWARDS: Record<string, number> = {
+  kill_enemies: 1,
+  earn_gold: 1,
+  tap_damage: 1,
+  use_skills: 2,
+  defeat_bosses: 3,
+  reach_stage: 2,
+};
+
 const CHALLENGES_PER_DAY = 3;
 
 function getUTCDateString(): string {
@@ -179,8 +188,13 @@ export class DailyPlugin implements IPlugin {
         c.current_value = Math.min(c.current_value + amount, c.target_value);
         if (c.current_value >= c.target_value) {
           c.completed = true;
+          const diamonds = DIAMOND_REWARDS[c.challenge_type] ?? 1;
           this.engine.emit('daily_completed', { challenge: c });
-          this.engine.updateState({ gold: this.engine.state.gold + c.reward_gold });
+          this.engine.updateState({
+            gold: this.engine.state.gold + c.reward_gold,
+            diamonds: this.engine.state.diamonds + diamonds,
+          });
+          this.engine.emit('diamonds_earned', { amount: diamonds, source: 'daily' });
         }
         changed = true;
         void this.saveProgress(c);
@@ -196,8 +210,13 @@ export class DailyPlugin implements IPlugin {
         c.current_value = Math.min(value, c.target_value);
         if (c.current_value >= c.target_value) {
           c.completed = true;
+          const diamonds = DIAMOND_REWARDS[c.challenge_type] ?? 1;
           this.engine.emit('daily_completed', { challenge: c });
-          this.engine.updateState({ gold: this.engine.state.gold + c.reward_gold });
+          this.engine.updateState({
+            gold: this.engine.state.gold + c.reward_gold,
+            diamonds: this.engine.state.diamonds + diamonds,
+          });
+          this.engine.emit('diamonds_earned', { amount: diamonds, source: 'daily' });
         }
         changed = true;
         void this.saveProgress(c);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CircuitBoard, Zap, ChevronDown, Trophy, Clock, Award } from 'lucide-react';
+import { CircuitBoard, Zap, ChevronDown, Trophy, Clock, Award, ShoppingBag, Swords } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import type { Player } from '../../engine/types';
 import { CyberHUD } from './CyberHUD';
@@ -12,6 +12,8 @@ import { LeaderboardScreen } from './LeaderboardScreen';
 import { DailiesScreen } from './DailiesScreen';
 import { AchievementsScreen } from './AchievementsScreen';
 import { AchievementToast } from './AchievementToast';
+import { ShopScreen } from './ShopScreen';
+import { TournamentScreen } from './TournamentScreen';
 import { useGameState } from '../../hooks/useGameState';
 import { Tooltip, TooltipLabel, TooltipText } from './Tooltip';
 import type { OverclockPlugin } from '../../plugins/OverclockPlugin';
@@ -31,18 +33,12 @@ const MobileDrawerOverlay: React.FC<{
   children: React.ReactNode;
 }> = ({ open, onClose, title, accentColor, children }) => (
   <>
-    {/* Backdrop */}
     {open && (
       <div
         onClick={onClose}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 40,
-          background: 'rgba(0,0,0,0.55)',
-        }}
+        style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.55)' }}
       />
     )}
-
-    {/* Drawer */}
     <div
       style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50,
@@ -50,15 +46,11 @@ const MobileDrawerOverlay: React.FC<{
         background: '#0a0a0f',
         border: `1px solid ${accentColor}33`,
         borderBottom: 'none',
-        borderRadius: '0',
         transform: open ? 'translateY(0)' : 'translateY(100%)',
         transition: 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}
     >
-      {/* Drag handle + title */}
       <div
         style={{
           flexShrink: 0,
@@ -82,13 +74,53 @@ const MobileDrawerOverlay: React.FC<{
           <ChevronDown size={14} />
         </button>
       </div>
-
-      {/* Content */}
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         {children}
       </div>
     </div>
   </>
+);
+
+interface TabButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+  activeColor?: string;
+  badge?: number | null;
+  onClick: () => void;
+}
+
+const MobileTab: React.FC<TabButtonProps> = ({ icon, label, active, activeColor = '#00f5ff', badge, onClick }) => (
+  <button
+    onClick={onClick}
+    style={{
+      background: active ? `${activeColor}12` : 'transparent',
+      border: 'none',
+      borderTop: active ? `2px solid ${activeColor}` : '2px solid transparent',
+      color: active ? activeColor : '#3a4a5a',
+      padding: '8px 6px',
+      cursor: 'pointer',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+      transition: 'all 0.15s',
+      minHeight: 52,
+      minWidth: 52,
+      flexShrink: 0,
+      position: 'relative',
+    }}
+  >
+    {icon}
+    <span className="font-pixel" style={{ fontSize: '6px', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{label}</span>
+    {badge != null && badge > 0 && (
+      <span style={{
+        position: 'absolute', top: 4, right: 4,
+        background: activeColor, color: '#000',
+        padding: '0 3px', fontSize: '6px', lineHeight: '11px',
+        fontFamily: 'var(--font-mono)', minWidth: 11, textAlign: 'center',
+      }}>
+        {badge}
+      </span>
+    )}
+  </button>
 );
 
 export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
@@ -99,6 +131,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showDailies, setShowDailies] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showShop, setShowShop] = useState(false);
+  const [showTournament, setShowTournament] = useState(false);
   const [mobileDrawer, setMobileDrawer] = useState<MobileDrawer>(null);
 
   const inventoryCount = useGameState(engine, s => (s.inventory ?? []).length);
@@ -123,16 +157,23 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
 
   const openDrawer = (d: MobileDrawer) => setMobileDrawer(prev => prev === d ? null : d);
 
+  const modals = (
+    <>
+      {showMotherboard && <MotherboardScreen engine={engine} onClose={() => setShowMotherboard(false)} />}
+      {showOverclockPopup && <OverclockScreen engine={engine} onClose={() => setShowOverclockPopup(false)} />}
+      {showLeaderboard && <LeaderboardScreen engine={engine} onClose={() => setShowLeaderboard(false)} />}
+      {showDailies && <DailiesScreen engine={engine} onClose={() => setShowDailies(false)} />}
+      {showAchievements && <AchievementsScreen engine={engine} onClose={() => setShowAchievements(false)} />}
+      {showShop && <ShopScreen engine={engine} onClose={() => setShowShop(false)} />}
+      {showTournament && <TournamentScreen engine={engine} onClose={() => setShowTournament(false)} />}
+      <AchievementToast engine={engine} />
+    </>
+  );
+
   if (isMobile) {
     return (
       <div style={{ height: '100dvh', background: '#0a0a0f', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Modals */}
-        {showMotherboard && <MotherboardScreen engine={engine} onClose={() => setShowMotherboard(false)} />}
-        {showLeaderboard && <LeaderboardScreen engine={engine} onClose={() => setShowLeaderboard(false)} />}
-        {showDailies && <DailiesScreen engine={engine} onClose={() => setShowDailies(false)} />}
-        {showAchievements && <AchievementsScreen engine={engine} onClose={() => setShowAchievements(false)} />}
-        <AchievementToast engine={engine} />
-
+        {modals}
         <CyberHUD engine={engine} playerHandle={player.handle} />
 
         {offlineMsg && (
@@ -144,132 +185,67 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
           </div>
         )}
 
-        {/* Battlefield fills all remaining space */}
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <Battlefield engine={engine} />
         </div>
 
-        {/* Bottom tab bar */}
+        {/* Scrollable bottom tab bar */}
         <div
           style={{
             flexShrink: 0,
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
+            display: 'flex',
             background: '#050010',
             borderTop: '1px solid #1a1a2a',
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
           }}
         >
-          {/* Components tab */}
-          <button
+          <MobileTab
+            icon={<CircuitBoard size={15} color={mobileDrawer === 'components' ? '#00f5ff' : '#3a4a5a'} />}
+            label="MODULES"
+            active={mobileDrawer === 'components'}
+            activeColor="#00f5ff"
+            badge={inventoryCount > 0 ? inventoryCount : null}
             onClick={() => openDrawer('components')}
-            style={{
-              background: mobileDrawer === 'components' ? '#001520' : 'transparent',
-              border: 'none',
-              borderTop: mobileDrawer === 'components' ? '2px solid #00f5ff' : '2px solid transparent',
-              color: mobileDrawer === 'components' ? '#00f5ff' : '#3a4a5a',
-              padding: '8px 2px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-              transition: 'all 0.15s',
-              minHeight: 52,
-            }}
-          >
-            <CircuitBoard size={15} color={mobileDrawer === 'components' ? '#00f5ff' : '#3a4a5a'} />
-            <span className="font-pixel" style={{ fontSize: '6px', letterSpacing: '0.5px' }}>MODULES</span>
-            {inventoryCount > 0 && (
-              <span style={{
-                background: '#39ff14', color: '#000',
-                padding: '0 3px', fontSize: '6px', lineHeight: '12px',
-                fontFamily: 'var(--font-mono)', minWidth: 12, textAlign: 'center',
-              }}>
-                {inventoryCount}
-              </span>
-            )}
-          </button>
-
-          {/* Overclock tab */}
-          <button
+          />
+          <MobileTab
+            icon={<Zap size={15} color={mobileDrawer === 'overclock' ? '#ff0080' : '#3a4a5a'} />}
+            label="OVERCLOCK"
+            active={mobileDrawer === 'overclock'}
+            activeColor="#ff0080"
+            badge={availableOCT > 0 ? availableOCT : null}
             onClick={() => openDrawer('overclock')}
-            style={{
-              background: mobileDrawer === 'overclock' ? '#130010' : 'transparent',
-              border: 'none',
-              borderTop: mobileDrawer === 'overclock' ? '2px solid #ff0080' : '2px solid transparent',
-              color: mobileDrawer === 'overclock' ? '#ff0080' : '#3a4a5a',
-              padding: '8px 2px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-              transition: 'all 0.15s',
-              minHeight: 52,
-            }}
-          >
-            <Zap size={15} color={mobileDrawer === 'overclock' ? '#ff0080' : '#3a4a5a'} />
-            <span className="font-pixel" style={{ fontSize: '6px', letterSpacing: '0.5px' }}>OVERCLOCK</span>
-            {availableOCT > 0 && (
-              <span style={{
-                background: '#ff0080', color: '#000',
-                padding: '0 3px', fontSize: '6px', lineHeight: '12px',
-                fontFamily: 'var(--font-mono)', minWidth: 12, textAlign: 'center',
-              }}>
-                {availableOCT}
-              </span>
-            )}
-          </button>
-
-          {/* Leaderboard tab */}
-          <button
+          />
+          <MobileTab
+            icon={<ShoppingBag size={15} color="#3a4a5a" />}
+            label="SHOP"
+            activeColor="#00e5ff"
+            onClick={() => setShowShop(true)}
+          />
+          <MobileTab
+            icon={<Swords size={15} color="#3a4a5a" />}
+            label="TOURNEY"
+            activeColor="#ffaa00"
+            onClick={() => setShowTournament(true)}
+          />
+          <MobileTab
+            icon={<Trophy size={15} color="#3a4a5a" />}
+            label="RANKS"
+            activeColor="#00f5ff"
             onClick={() => setShowLeaderboard(true)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderTop: '2px solid transparent',
-              color: '#3a4a5a',
-              padding: '8px 2px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-              transition: 'all 0.15s',
-              minHeight: 52,
-            }}
-          >
-            <Trophy size={15} color="#3a4a5a" />
-            <span className="font-pixel" style={{ fontSize: '6px', letterSpacing: '0.5px' }}>RANKS</span>
-          </button>
-
-          {/* Dailies tab */}
-          <button
+          />
+          <MobileTab
+            icon={<Clock size={15} color="#3a4a5a" />}
+            label="DAILY"
+            activeColor="#00f5ff"
             onClick={() => setShowDailies(true)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderTop: '2px solid transparent',
-              color: '#3a4a5a',
-              padding: '8px 2px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-              transition: 'all 0.15s',
-              minHeight: 52,
-            }}
-          >
-            <Clock size={15} color="#3a4a5a" />
-            <span className="font-pixel" style={{ fontSize: '6px', letterSpacing: '0.5px' }}>DAILY</span>
-          </button>
-
-          {/* Achievements tab */}
-          <button
+          />
+          <MobileTab
+            icon={<Award size={15} color="#3a4a5a" />}
+            label="FEATS"
+            activeColor="#ffaa00"
             onClick={() => setShowAchievements(true)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderTop: '2px solid transparent',
-              color: '#3a4a5a',
-              padding: '8px 2px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-              transition: 'all 0.15s',
-              minHeight: 52,
-            }}
-          >
-            <Award size={15} color="#3a4a5a" />
-            <span className="font-pixel" style={{ fontSize: '6px', letterSpacing: '0.5px' }}>FEATS</span>
-          </button>
+          />
         </div>
 
         {/* Components drawer */}
@@ -279,11 +255,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
           title="HARDWARE MODULES"
           accentColor="#00f5ff"
         >
-          <ComponentPanel
-            engine={engine}
-            onOpenMotherboard={() => { setMobileDrawer(null); setTimeout(() => setShowMotherboard(true), 100); }}
-            onOpenOverclock={() => { setMobileDrawer(null); setTimeout(() => openDrawer('overclock'), 100); }}
-          />
+          <ComponentPanel engine={engine} />
         </MobileDrawerOverlay>
 
         {/* Overclock drawer */}
@@ -301,16 +273,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
     );
   }
 
-  // Desktop layout: left components | center battlefield | right overclock
+  // Desktop layout
   return (
     <div className="flex flex-col" style={{ height: '100dvh', background: '#0a0a0f' }}>
-      {showMotherboard && <MotherboardScreen engine={engine} onClose={() => setShowMotherboard(false)} />}
-      {showOverclockPopup && <OverclockScreen engine={engine} onClose={() => setShowOverclockPopup(false)} />}
-      {showLeaderboard && <LeaderboardScreen engine={engine} onClose={() => setShowLeaderboard(false)} />}
-      {showDailies && <DailiesScreen engine={engine} onClose={() => setShowDailies(false)} />}
-      {showAchievements && <AchievementsScreen engine={engine} onClose={() => setShowAchievements(false)} />}
-      <AchievementToast engine={engine} />
-
+      {modals}
       <CyberHUD engine={engine} playerHandle={player.handle} />
 
       {offlineMsg && (
@@ -333,11 +299,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
             display: 'flex', flexDirection: 'column',
           }}
         >
-          <ComponentPanel
-            engine={engine}
-            onOpenMotherboard={() => setShowMotherboard(true)}
-            onOpenOverclock={() => setShowOverclockPopup(true)}
-          />
+          <ComponentPanel engine={engine} />
         </div>
 
         {/* Center: Battlefield */}
@@ -352,7 +314,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
             background: '#0a0a0f',
             borderLeft: '1px solid #1a1a2a',
             display: 'flex', flexDirection: 'column',
-            padding: 12, gap: 10,
+            padding: '12px 12px 8px', gap: 8,
+            overflowY: 'auto',
           }}
         >
           <div className="font-pixel" style={{ color: '#2a3a4a', fontSize: '6px', letterSpacing: '3px', marginBottom: 2 }}>
@@ -360,173 +323,140 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
           </div>
 
           {/* Motherboard / Hardware */}
-          <Tooltip content={<><TooltipLabel label="HARDWARE" color="#39ff14" /><TooltipText>Equip dropped items to boost stats. Manage your motherboard slots.</TooltipText></>} position="left">
-          <button
-            onClick={() => setShowMotherboard(true)}
-            style={{
-              width: '100%',
-              background: inventoryCount > 0 ? '#031a10' : '#080810',
-              border: `1px solid ${inventoryCount > 0 ? '#39ff1455' : '#1a2a2a'}`,
-              color: inventoryCount > 0 ? '#39ff14' : '#2a3a4a',
-              padding: '14px 10px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-              boxShadow: inventoryCount > 0 ? '0 0 10px rgba(57,255,20,0.12)' : 'none',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#39ff14';
-              e.currentTarget.style.color = '#39ff14';
-              e.currentTarget.style.boxShadow = '0 0 14px rgba(57,255,20,0.25)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = inventoryCount > 0 ? '#39ff1455' : '#1a2a2a';
-              e.currentTarget.style.color = inventoryCount > 0 ? '#39ff14' : '#2a3a4a';
-              e.currentTarget.style.boxShadow = inventoryCount > 0 ? '0 0 10px rgba(57,255,20,0.12)' : 'none';
-            }}
-          >
-            <CircuitBoard size={22} />
-            <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>HARDWARE</div>
-            {inventoryCount > 0 && (
-              <div style={{
-                background: '#39ff14', color: '#000',
-                padding: '1px 6px', fontSize: '7px', lineHeight: '14px',
-                fontFamily: 'var(--font-mono)', minWidth: 20, textAlign: 'center',
-              }}>
-                {inventoryCount} IN STORAGE
-              </div>
-            )}
-          </button>
+          <Tooltip content={<><TooltipLabel label="HARDWARE" color="#39ff14" /><TooltipText>Equip dropped items to boost stats.</TooltipText></>} position="left">
+            <button
+              onClick={() => setShowMotherboard(true)}
+              style={{
+                width: '100%', background: inventoryCount > 0 ? '#031a10' : '#080810',
+                border: `1px solid ${inventoryCount > 0 ? '#39ff1455' : '#1a2a2a'}`,
+                color: inventoryCount > 0 ? '#39ff14' : '#2a3a4a', padding: '12px 10px',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                boxShadow: inventoryCount > 0 ? '0 0 10px rgba(57,255,20,0.12)' : 'none', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#39ff14'; e.currentTarget.style.color = '#39ff14'; e.currentTarget.style.boxShadow = '0 0 14px rgba(57,255,20,0.25)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = inventoryCount > 0 ? '#39ff1455' : '#1a2a2a'; e.currentTarget.style.color = inventoryCount > 0 ? '#39ff14' : '#2a3a4a'; e.currentTarget.style.boxShadow = inventoryCount > 0 ? '0 0 10px rgba(57,255,20,0.12)' : 'none'; }}
+            >
+              <CircuitBoard size={20} />
+              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>HARDWARE</div>
+              {inventoryCount > 0 && (
+                <div style={{ background: '#39ff14', color: '#000', padding: '1px 6px', fontSize: '7px', lineHeight: '14px', fontFamily: 'var(--font-mono)', textAlign: 'center' }}>
+                  {inventoryCount} IN STORAGE
+                </div>
+              )}
+            </button>
           </Tooltip>
 
           {/* Overclock */}
-          <Tooltip content={<><TooltipLabel label="OVERCLOCK" color="#ff0080" /><TooltipText>Spend OCT on permanent upgrades. Resets progress but you come back stronger.</TooltipText></>} position="left">
-          <button
-            onClick={() => setShowOverclockPopup(true)}
-            style={{
-              width: '100%',
-              background: availableOCT > 0 ? '#130010' : '#080808',
-              border: `1px solid ${availableOCT > 0 ? '#ff008055' : '#1a1a2a'}`,
-              color: availableOCT > 0 ? '#ff0080' : '#2a2a3a',
-              padding: '14px 10px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-              boxShadow: availableOCT > 0 ? '0 0 10px rgba(255,0,128,0.12)' : 'none',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#ff0080';
-              e.currentTarget.style.color = '#ff0080';
-              e.currentTarget.style.boxShadow = '0 0 14px rgba(255,0,128,0.25)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = availableOCT > 0 ? '#ff008055' : '#1a1a2a';
-              e.currentTarget.style.color = availableOCT > 0 ? '#ff0080' : '#2a2a3a';
-              e.currentTarget.style.boxShadow = availableOCT > 0 ? '0 0 10px rgba(255,0,128,0.12)' : 'none';
-            }}
-          >
-            <Zap size={22} />
-            <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>OVERCLOCK</div>
-            {availableOCT > 0 && (
-              <div style={{
-                background: '#ff0080', color: '#000',
-                padding: '1px 6px', fontSize: '7px', lineHeight: '14px',
-                fontFamily: 'var(--font-mono)', minWidth: 20, textAlign: 'center',
-              }}>
-                {availableOCT} OCT FREE
-              </div>
-            )}
-          </button>
+          <Tooltip content={<><TooltipLabel label="OVERCLOCK" color="#ff0080" /><TooltipText>Spend OCT on permanent upgrades.</TooltipText></>} position="left">
+            <button
+              onClick={() => setShowOverclockPopup(true)}
+              style={{
+                width: '100%', background: availableOCT > 0 ? '#130010' : '#080808',
+                border: `1px solid ${availableOCT > 0 ? '#ff008055' : '#1a1a2a'}`,
+                color: availableOCT > 0 ? '#ff0080' : '#2a2a3a', padding: '12px 10px',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                boxShadow: availableOCT > 0 ? '0 0 10px rgba(255,0,128,0.12)' : 'none', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#ff0080'; e.currentTarget.style.color = '#ff0080'; e.currentTarget.style.boxShadow = '0 0 14px rgba(255,0,128,0.25)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = availableOCT > 0 ? '#ff008055' : '#1a1a2a'; e.currentTarget.style.color = availableOCT > 0 ? '#ff0080' : '#2a2a3a'; e.currentTarget.style.boxShadow = availableOCT > 0 ? '0 0 10px rgba(255,0,128,0.12)' : 'none'; }}
+            >
+              <Zap size={20} />
+              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>OVERCLOCK</div>
+              {availableOCT > 0 && (
+                <div style={{ background: '#ff0080', color: '#000', padding: '1px 6px', fontSize: '7px', lineHeight: '14px', fontFamily: 'var(--font-mono)', textAlign: 'center' }}>
+                  {availableOCT} OCT FREE
+                </div>
+              )}
+            </button>
+          </Tooltip>
+
+          {/* Shop */}
+          <Tooltip content={<><TooltipLabel label="BLACK MARKET" color="#00e5ff" /><TooltipText>Spend OC tokens and Diamonds on permanent upgrades.</TooltipText></>} position="left">
+            <button
+              onClick={() => setShowShop(true)}
+              style={{
+                width: '100%', background: '#080810',
+                border: '1px solid #0a1a28',
+                color: '#2a3a5a', padding: '12px 10px',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00e5ff'; e.currentTarget.style.color = '#00e5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,229,255,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a1a28'; e.currentTarget.style.color = '#2a3a5a'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <ShoppingBag size={20} />
+              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>SHOP</div>
+            </button>
+          </Tooltip>
+
+          {/* Tournament */}
+          <Tooltip content={<><TooltipLabel label="TOURNAMENT" color="#ffaa00" /><TooltipText>Compete against other players for Diamond prizes.</TooltipText></>} position="left">
+            <button
+              onClick={() => setShowTournament(true)}
+              style={{
+                width: '100%', background: '#080808',
+                border: '1px solid #1a1200',
+                color: '#3a2a00', padding: '12px 10px',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#ffaa00'; e.currentTarget.style.color = '#ffaa00'; e.currentTarget.style.boxShadow = '0 0 14px rgba(255,170,0,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1200'; e.currentTarget.style.color = '#3a2a00'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <Swords size={20} />
+              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>TOURNEY</div>
+            </button>
           </Tooltip>
 
           {/* Leaderboard */}
-          <Tooltip content={<><TooltipLabel label="LEADERBOARD" /><TooltipText>Global rankings. Compete with other players by stage and overclock count.</TooltipText></>} position="left">
-          <button
-            onClick={() => setShowLeaderboard(true)}
-            style={{
-              width: '100%',
-              background: '#080810',
-              border: '1px solid #0a2838',
-              color: '#2a4a5a',
-              padding: '14px 10px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#00f5ff';
-              e.currentTarget.style.color = '#00f5ff';
-              e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = '#0a2838';
-              e.currentTarget.style.color = '#2a4a5a';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <Trophy size={22} />
-            <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>RANKS</div>
-          </button>
+          <Tooltip content={<><TooltipLabel label="LEADERBOARD" /><TooltipText>Global rankings by stage and overclock count.</TooltipText></>} position="left">
+            <button
+              onClick={() => setShowLeaderboard(true)}
+              style={{
+                width: '100%', background: '#080810', border: '1px solid #0a2838', color: '#2a4a5a', padding: '12px 10px',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a4a5a'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <Trophy size={20} />
+              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>RANKS</div>
+            </button>
           </Tooltip>
 
           {/* Daily Challenges */}
-          <Tooltip content={<><TooltipLabel label="DAILY OPS" color="#00f5ff" /><TooltipText>Complete rotating challenges for gold rewards. Resets every 24h.</TooltipText></>} position="left">
-          <button
-            onClick={() => setShowDailies(true)}
-            style={{
-              width: '100%',
-              background: '#080810',
-              border: '1px solid #0a2838',
-              color: '#2a4a5a',
-              padding: '14px 10px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#00f5ff';
-              e.currentTarget.style.color = '#00f5ff';
-              e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = '#0a2838';
-              e.currentTarget.style.color = '#2a4a5a';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <Clock size={22} />
-            <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>DAILY OPS</div>
-          </button>
+          <Tooltip content={<><TooltipLabel label="DAILY OPS" color="#00f5ff" /><TooltipText>Complete challenges for gold and diamond rewards.</TooltipText></>} position="left">
+            <button
+              onClick={() => setShowDailies(true)}
+              style={{
+                width: '100%', background: '#080810', border: '1px solid #0a2838', color: '#2a4a5a', padding: '12px 10px',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a4a5a'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <Clock size={20} />
+              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>DAILY OPS</div>
+            </button>
           </Tooltip>
 
           {/* Achievements */}
-          <Tooltip content={<><TooltipLabel label="ACHIEVEMENTS" color="#ffaa00" /><TooltipText>Permanent milestones. Track your progress across all runs.</TooltipText></>} position="left">
-          <button
-            onClick={() => setShowAchievements(true)}
-            style={{
-              width: '100%',
-              background: '#080810',
-              border: '1px solid #1a1a0a',
-              color: '#2a3a2a',
-              padding: '14px 10px',
-              cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#ffaa00';
-              e.currentTarget.style.color = '#ffaa00';
-              e.currentTarget.style.boxShadow = '0 0 14px rgba(255,170,0,0.2)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = '#1a1a0a';
-              e.currentTarget.style.color = '#2a3a2a';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <Award size={22} />
-            <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>FEATS</div>
-          </button>
+          <Tooltip content={<><TooltipLabel label="ACHIEVEMENTS" color="#ffaa00" /><TooltipText>Permanent milestones across all runs.</TooltipText></>} position="left">
+            <button
+              onClick={() => setShowAchievements(true)}
+              style={{
+                width: '100%', background: '#080810', border: '1px solid #1a1a0a', color: '#2a3a2a', padding: '12px 10px',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#ffaa00'; e.currentTarget.style.color = '#ffaa00'; e.currentTarget.style.boxShadow = '0 0 14px rgba(255,170,0,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a0a'; e.currentTarget.style.color = '#2a3a2a'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <Award size={20} />
+              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>FEATS</div>
+            </button>
           </Tooltip>
         </div>
       </div>

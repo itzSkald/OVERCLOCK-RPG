@@ -32,6 +32,7 @@ export const DEFAULT_STATE: GameState = {
   isBossActive: false,
   pendingBossReturn: false,
   pendingBossStage: null,
+  diamonds: 0,
   lastSaveTime: Date.now(),
   lastTickTime: Date.now(),
   schemaVersion: 1,

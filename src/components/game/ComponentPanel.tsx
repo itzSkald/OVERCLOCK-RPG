@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
-import { CircuitBoard, Zap } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import { useGameState } from '../../hooks/useGameState';
 import { getComponentBulkCost, getComponentDps } from '../../plugins/ComponentPlugin';
 import type { ComponentPlugin } from '../../plugins/ComponentPlugin';
 import type { ComponentDef } from '../../engine/types';
-import type { OverclockPlugin } from '../../plugins/OverclockPlugin';
 import { Tooltip, TooltipLabel, TooltipText, TooltipStat } from './Tooltip';
 
 type PurchaseMode = 1 | 10 | 100 | 'max';
 
 interface ComponentPanelProps {
   engine: GameEngine;
-  onOpenMotherboard?: () => void;
-  onOpenOverclock?: () => void;
 }
 
 const COLOR_MAP = {
@@ -76,12 +72,10 @@ const ComponentCard: React.FC<{
         padding: '10px',
         boxShadow: `0 0 8px ${colors.glow}`,
         position: 'relative',
-        // Pass color to CSS custom property for the keyframe animation
         ['--luf-color' as string]: colors.text,
         transition: 'box-shadow 0.1s',
       }}
     >
-      {/* Level-up floating text */}
       {showLevelUpText && (
         <div
           className="animate-level-up-text font-pixel"
@@ -160,19 +154,11 @@ const ComponentCard: React.FC<{
   );
 };
 
-export const ComponentPanel: React.FC<ComponentPanelProps> = ({ engine, onOpenMotherboard, onOpenOverclock }) => {
+export const ComponentPanel: React.FC<ComponentPanelProps> = ({ engine }) => {
   const components = useGameState(engine, s => s.components);
   const gold = useGameState(engine, s => s.gold);
-  const inventoryCount = useGameState(engine, s => (s.inventory ?? []).length);
-  const equippedItems = useGameState(engine, s => s.equippedItems);
-  const overclockCount = useGameState(engine, s => s.overclockCount);
   const [purchaseMode, setPurchaseMode] = useState<PurchaseMode>(1);
 
-  const equippedCount = Object.values(equippedItems ?? {})
-    .flatMap(v => Array.isArray(v) ? v : [v])
-    .filter(Boolean).length;
-
-  const availableOCT = engine.getPlugin<OverclockPlugin>('overclock')?.getAvailableOCT() ?? overclockCount;
   const plugin = engine.getPlugin<ComponentPlugin>('component');
 
   const handleBuy = (id: string, qty: number): boolean => {
@@ -181,9 +167,6 @@ export const ComponentPanel: React.FC<ComponentPanelProps> = ({ engine, onOpenMo
   };
 
   const unlockedComponents = Object.values(components).filter(c => c.unlocked);
-
-  const hasBoardActivity = equippedCount > 0 || inventoryCount > 0;
-  const hasOCT = availableOCT > 0;
 
   const MODES: { label: string; value: PurchaseMode }[] = [
     { label: 'x1', value: 1 },
@@ -194,90 +177,8 @@ export const ComponentPanel: React.FC<ComponentPanelProps> = ({ engine, onOpenMo
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#0a0a0f' }}>
 
-      {/* Shortcut buttons */}
+      {/* Header + purchase mode selector */}
       <div style={{ flexShrink: 0, padding: '8px 8px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
-
-          {/* Motherboard / Hardware button */}
-          <button
-            onClick={onOpenMotherboard}
-            className="font-pixel flex items-center justify-center gap-1"
-            style={{
-              background: hasBoardActivity ? '#031a10' : '#080810',
-              border: `1px solid ${hasBoardActivity ? '#39ff1455' : '#1a2a2a'}`,
-              color: hasBoardActivity ? '#39ff14' : '#2a3a4a',
-              padding: '7px 6px',
-              fontSize: '6px',
-              letterSpacing: '1px',
-              cursor: 'pointer',
-              transition: 'border-color 0.15s, color 0.15s, box-shadow 0.15s',
-              boxShadow: hasBoardActivity ? '0 0 8px rgba(57,255,20,0.12)' : 'none',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#39ff14';
-              e.currentTarget.style.color = '#39ff14';
-              e.currentTarget.style.boxShadow = '0 0 12px rgba(57,255,20,0.25)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = hasBoardActivity ? '#39ff1455' : '#1a2a2a';
-              e.currentTarget.style.color = hasBoardActivity ? '#39ff14' : '#2a3a4a';
-              e.currentTarget.style.boxShadow = hasBoardActivity ? '0 0 8px rgba(57,255,20,0.12)' : 'none';
-            }}
-          >
-            <CircuitBoard size={10} />
-            HARDWARE
-            {inventoryCount > 0 && (
-              <span style={{
-                background: '#39ff14', color: '#000',
-                padding: '0 3px', fontSize: '6px', lineHeight: '11px',
-                minWidth: 11, textAlign: 'center', fontFamily: 'var(--font-mono)',
-              }}>
-                {inventoryCount}
-              </span>
-            )}
-          </button>
-
-          {/* Overclock button */}
-          <button
-            onClick={onOpenOverclock}
-            className="font-pixel flex items-center justify-center gap-1"
-            style={{
-              background: hasOCT ? '#130010' : '#080808',
-              border: `1px solid ${hasOCT ? '#ff008055' : '#1a1a2a'}`,
-              color: hasOCT ? '#ff0080' : '#2a2a3a',
-              padding: '7px 6px',
-              fontSize: '6px',
-              letterSpacing: '1px',
-              cursor: 'pointer',
-              transition: 'border-color 0.15s, color 0.15s, box-shadow 0.15s',
-              boxShadow: hasOCT ? '0 0 8px rgba(255,0,128,0.12)' : 'none',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#ff0080';
-              e.currentTarget.style.color = '#ff0080';
-              e.currentTarget.style.boxShadow = '0 0 12px rgba(255,0,128,0.25)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = hasOCT ? '#ff008055' : '#1a1a2a';
-              e.currentTarget.style.color = hasOCT ? '#ff0080' : '#2a2a3a';
-              e.currentTarget.style.boxShadow = hasOCT ? '0 0 8px rgba(255,0,128,0.12)' : 'none';
-            }}
-          >
-            <Zap size={10} />
-            OVERCLOCK
-            {hasOCT && (
-              <span style={{
-                background: '#ff0080', color: '#000',
-                padding: '0 3px', fontSize: '6px', lineHeight: '11px',
-                minWidth: 11, textAlign: 'center', fontFamily: 'var(--font-mono)',
-              }}>
-                {availableOCT}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Header + purchase mode selector */}
         <div style={{ borderBottom: '1px solid #1a2a3a', paddingBottom: 8, marginBottom: 0 }}>
           <div
             className="font-pixel mb-2"
@@ -286,7 +187,6 @@ export const ComponentPanel: React.FC<ComponentPanelProps> = ({ engine, onOpenMo
             {'> HARDWARE MODULES'}
           </div>
 
-          {/* x1 / x10 / x100 row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginBottom: 4 }}>
             {MODES.map(m => {
               const active = purchaseMode === m.value;
@@ -312,7 +212,6 @@ export const ComponentPanel: React.FC<ComponentPanelProps> = ({ engine, onOpenMo
             })}
           </div>
 
-          {/* BUY MAX button */}
           <button
             onClick={() => setPurchaseMode('max')}
             className="font-pixel w-full"
@@ -352,7 +251,6 @@ export const ComponentPanel: React.FC<ComponentPanelProps> = ({ engine, onOpenMo
               maxQty={maxQty}
               onBuy={qty => handleBuy(comp.id, qty)}
             />
-
           );
         })}
       </div>

@@ -36,7 +36,11 @@ export type GameEventType =
   | 'item_unequipped'
   | 'mobo_upgrade'
   | 'daily_completed'
-  | 'achievement_unlocked';
+  | 'achievement_unlocked'
+  | 'diamonds_earned'
+  | 'shop_purchase'
+  | 'tournament_joined'
+  | 'tournament_score_update';
 
 export interface GameEvent<T = unknown> {
   type: GameEventType;
@@ -154,6 +158,7 @@ export interface GameState {
   isBossActive: boolean;
   pendingBossReturn: boolean;
   pendingBossStage: number | null;
+  diamonds: number;
   lastSaveTime: number;
   lastTickTime: number;
   schemaVersion: number;

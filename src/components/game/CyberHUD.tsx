@@ -21,6 +21,7 @@ function formatNumber(n: number): string {
 export const CyberHUD: React.FC<CyberHUDProps> = ({ engine, playerHandle }) => {
   const stage = useGameState(engine, s => s.stage);
   const gold = useGameState(engine, s => s.gold);
+  const diamonds = useGameState(engine, s => s.diamonds);
   const overclocks = useGameState(engine, s => s.overclockCount);
   const components = useGameState(engine, s => s.components);
   const idleDps = getTotalIdleDps(components) * engine.getModifier('idle_dps');
@@ -73,6 +74,14 @@ export const CyberHUD: React.FC<CyberHUDProps> = ({ engine, playerHandle }) => {
         <span style={{ color: '#ffaa00', fontFamily: 'var(--font-mono)', fontSize: '9px' }}>◆</span>
         <span className="font-pixel glow-amber" style={{ color: '#ffaa00', fontSize: '10px' }}>{formatNumber(gold)}</span>
       </div>
+
+      {/* Diamonds */}
+      {diamonds > 0 && (
+        <div className="flex items-center gap-1">
+          <span style={{ color: '#00e5ff', fontFamily: 'var(--font-mono)', fontSize: '9px' }}>◈</span>
+          <span className="font-pixel" style={{ color: '#00e5ff', fontSize: '10px' }}>{diamonds}</span>
+        </div>
+      )}
 
       {/* Overclocks */}
       <div className="flex items-center gap-1">
