@@ -138,7 +138,17 @@ export interface OverclockUpgrade {
   level: number;
 }
 
-export type SkillId = 'surge' | 'overclock_pulse' | 'gold_rush' | 'firewall' | 'chain_hack';
+export type SkillId =
+  | 'surge'
+  | 'overclock_pulse'
+  | 'gold_rush'
+  | 'firewall'
+  | 'chain_hack'
+  | 'static_discharge'
+  | 'signal_jam'
+  | 'meltdown'
+  | 'entropy_burst'
+  | 'quantum_echo';
 
 export interface SkillDef {
   id: SkillId;
