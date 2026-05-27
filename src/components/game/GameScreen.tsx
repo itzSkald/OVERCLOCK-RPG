@@ -145,7 +145,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
         )}
 
         {/* Battlefield fills all remaining space */}
-        <div style={{ flex: 1, minHeight: 0 }}>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <Battlefield engine={engine} />
         </div>
 
