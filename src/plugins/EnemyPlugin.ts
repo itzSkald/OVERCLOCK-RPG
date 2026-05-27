@@ -1,4 +1,5 @@
 import type { IPlugin, IEngine, GameState, Enemy, GameEvent } from '../engine/types';
+import type { SkillPlugin } from './SkillPlugin';
 
 const ENEMY_NAMES_BY_TIER = [
   ['MALWARE.BAT', 'CORRUPT_PROC', 'NULL_PTR', 'STACK_OVERFLOW'],
@@ -36,15 +37,25 @@ function getEnemyName(stage: number, isBoss: boolean): string {
   return names[Math.floor(Math.random() * names.length)];
 }
 
+const ELITE_CHANCE = 0.15;
+
 export function spawnEnemy(stage: number): Enemy {
   const isBoss = stage % 10 === 0;
+  const isElite = !isBoss && stage > 3 && Math.random() < ELITE_CHANCE;
+  const hpMultiplier = isElite ? 3 : 1;
+  const baseHp = isBoss ? getBossHp(stage) : getEnemyHp(stage) * hpMultiplier;
+
   return {
     id: `enemy_${stage}_${Date.now()}`,
-    name: getEnemyName(stage, isBoss),
-    hp: isBoss ? getBossHp(stage) : getEnemyHp(stage),
-    maxHp: isBoss ? getBossHp(stage) : getEnemyHp(stage),
+    name: isElite ? `[E] ${getEnemyName(stage, false)}` : getEnemyName(stage, isBoss),
+    hp: baseHp,
+    maxHp: baseHp,
     isBoss,
     tier: getEnemyTier(stage),
+    enemyType: isBoss ? 'boss' : isElite ? 'elite' : 'normal',
+    bossPhase: 'none',
+    isElite,
+    phaseThreshold: isBoss ? 0.5 : 0,
   };
 }
 
@@ -93,15 +104,26 @@ export class EnemyPlugin implements IPlugin {
     const state = this.engine.state;
     if (!state.enemy) return;
 
-    const newHp = Math.max(0, state.enemy.hp - amount);
+    let effectiveDamage = amount;
+
+    if (state.enemy.bossPhase === 'shield') {
+      effectiveDamage = Math.ceil(amount * 0.3);
+    }
+
+    const newHp = Math.max(0, state.enemy.hp - effectiveDamage);
     const updatedEnemy = { ...state.enemy, hp: newHp };
+
+    if (updatedEnemy.isBoss && updatedEnemy.bossPhase === 'none' && newHp <= updatedEnemy.maxHp * updatedEnemy.phaseThreshold) {
+      const phases: Array<'shield' | 'enrage' | 'regen'> = ['shield', 'enrage', 'regen'];
+      updatedEnemy.bossPhase = phases[Math.floor(Math.random() * phases.length)];
+    }
 
     this.engine.updateState({
       enemy: updatedEnemy,
-      totalDamageDealt: state.totalDamageDealt + amount,
+      totalDamageDealt: state.totalDamageDealt + effectiveDamage,
     });
 
-    this.engine.emit('enemy_hit', { damage: amount, hp: newHp, maxHp: state.enemy.maxHp });
+    this.engine.emit('enemy_hit', { damage: effectiveDamage, hp: newHp, maxHp: state.enemy.maxHp });
 
     if (newHp <= 0) {
       this.handleEnemyDeath();
@@ -112,7 +134,8 @@ export class EnemyPlugin implements IPlugin {
     const state = this.engine.state;
     if (!state.enemy) return;
 
-    const goldReward = Math.floor(state.enemy.maxHp * (state.enemy.isBoss ? 5 : 1));
+    const goldMultiplier = state.enemy.isBoss ? 5 : state.enemy.isElite ? 3 : 1;
+    const goldReward = Math.floor(state.enemy.maxHp * goldMultiplier);
     this.engine.emit('enemy_death', { enemy: state.enemy, goldReward });
     this.engine.updateState({ isBossActive: false });
     this.engine.emit('stage_clear', { stage: state.stage, goldReward });
@@ -121,9 +144,20 @@ export class EnemyPlugin implements IPlugin {
   onTick(delta: number, state: GameState): void {
     if (!state.isBossActive) return;
 
-    this.bossTimer -= delta;
+    const skillPlugin = this.engine.getPlugin<SkillPlugin>('skill');
+    const frozen = skillPlugin?.isFirewallActive() ?? false;
+
+    if (!frozen) {
+      this.bossTimer -= delta;
+    }
     const remaining = Math.max(0, this.bossTimer);
     this.engine.updateState({ bossTimeRemaining: remaining });
+
+    if (state.enemy?.bossPhase === 'regen' && state.enemy.hp < state.enemy.maxHp) {
+      const regenAmount = Math.ceil(state.enemy.maxHp * 0.02 * delta);
+      const newHp = Math.min(state.enemy.maxHp, state.enemy.hp + regenAmount);
+      this.engine.updateState({ enemy: { ...state.enemy, hp: newHp } });
+    }
 
     if (remaining <= 0) {
       this.engine.updateState({ isBossActive: false });

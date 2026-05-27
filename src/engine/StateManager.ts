@@ -1,4 +1,14 @@
-import type { GameState } from './types';
+import type { GameState, SkillCooldownState, SkillId } from './types';
+
+const DEFAULT_SKILL_COOLDOWN: SkillCooldownState = { readyAt: 0, activeUntil: 0 };
+
+const DEFAULT_SKILL_COOLDOWNS: Record<SkillId, SkillCooldownState> = {
+  surge: DEFAULT_SKILL_COOLDOWN,
+  overclock_pulse: DEFAULT_SKILL_COOLDOWN,
+  gold_rush: DEFAULT_SKILL_COOLDOWN,
+  firewall: DEFAULT_SKILL_COOLDOWN,
+  chain_hack: DEFAULT_SKILL_COOLDOWN,
+};
 
 export const DEFAULT_STATE: GameState = {
   stage: 1,
@@ -16,6 +26,7 @@ export const DEFAULT_STATE: GameState = {
   motherboardTier: 0,
   ramSlots: 1,
   expansionSlots: 1,
+  skillCooldowns: DEFAULT_SKILL_COOLDOWNS,
   totalDamageDealt: 0,
   bossTimeRemaining: 30,
   isBossActive: false,

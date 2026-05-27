@@ -50,6 +50,9 @@ export interface Player {
   avatarIndex: number;
 }
 
+export type EnemyType = 'normal' | 'elite' | 'boss';
+export type BossPhase = 'none' | 'shield' | 'enrage' | 'regen';
+
 export interface Enemy {
   id: string;
   name: string;
@@ -57,6 +60,10 @@ export interface Enemy {
   maxHp: number;
   isBoss: boolean;
   tier: number;
+  enemyType: EnemyType;
+  bossPhase: BossPhase;
+  isElite: boolean;
+  phaseThreshold: number;
 }
 
 export interface ComponentDef {
@@ -105,6 +112,24 @@ export interface OverclockUpgrade {
   level: number;
 }
 
+export type SkillId = 'surge' | 'overclock_pulse' | 'gold_rush' | 'firewall' | 'chain_hack';
+
+export interface SkillDef {
+  id: SkillId;
+  name: string;
+  description: string;
+  cooldown: number;
+  duration: number;
+  color: string;
+  icon: string;
+  unlockStage: number;
+}
+
+export interface SkillCooldownState {
+  readyAt: number;
+  activeUntil: number;
+}
+
 export interface GameState {
   stage: number;
   highestStage: number;
@@ -121,6 +146,7 @@ export interface GameState {
   motherboardTier: number;
   ramSlots: number;
   expansionSlots: number;
+  skillCooldowns: Record<SkillId, SkillCooldownState>;
   totalDamageDealt: number;
   bossTimeRemaining: number;
   isBossActive: boolean;

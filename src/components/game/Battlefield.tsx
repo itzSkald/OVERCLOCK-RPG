@@ -5,6 +5,7 @@ import { useGameState } from '../../hooks/useGameState';
 import { EnemySprite } from './EnemySprite';
 import { DamageNumber } from './DamageNumber';
 import { BossTimer } from './BossTimer';
+import { SkillBar } from './SkillBar';
 import { ZoneScene, getZone } from './ZoneScene';
 import type { ZoneConfig } from './ZoneScene';
 import type { TapPlugin } from '../../plugins/TapPlugin';
@@ -202,12 +203,9 @@ export const Battlefield: React.FC<BattlefieldProps> = ({ engine }) => {
         </div>
       )}
 
-      {/* Tap prompt */}
-      <div
-        className="font-pixel"
-        style={{ color: zone.accentColor, opacity: 0.2, fontSize: '7px', marginTop: 8, letterSpacing: '2px', position: 'relative', zIndex: 1 }}
-      >
-        TAP TO ATTACK
+      {/* Skill Bar */}
+      <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
+        <SkillBar engine={engine} />
       </div>
     </div>
   );

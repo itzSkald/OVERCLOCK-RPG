@@ -16,6 +16,7 @@ import { ZonePlugin } from './plugins/ZonePlugin';
 import { ItemPlugin } from './plugins/ItemPlugin';
 import { MoboPlugin } from './plugins/MoboPlugin';
 import { LeaderboardPlugin } from './plugins/LeaderboardPlugin';
+import { SkillPlugin } from './plugins/SkillPlugin';
 
 import { LoginScreen } from './components/auth/LoginScreen';
 import { RegisterScreen } from './components/auth/RegisterScreen';
@@ -41,6 +42,7 @@ function buildEngine(): GameEngine {
   engine.register(new MoboPlugin());
   engine.register(new SavePlugin());
   engine.register(new ZonePlugin());
+  engine.register(new SkillPlugin());
   engine.register(new LeaderboardPlugin());
 
   return engine;
