@@ -10,6 +10,7 @@ export class SavePlugin implements IPlugin {
   private engine!: IEngine;
   private saveTimer: ReturnType<typeof setInterval> | null = null;
   private boundBeforeUnload!: () => void;
+  private boundVisibilityChange!: () => void;
 
   async init(engine: IEngine): Promise<void> {
     this.engine = engine;
@@ -24,6 +25,17 @@ export class SavePlugin implements IPlugin {
 
     this.boundBeforeUnload = () => engine.emit('save_requested', {});
     window.addEventListener('beforeunload', this.boundBeforeUnload);
+
+    // Save when tab becomes hidden to ensure progress is persisted
+    // This prevents data loss if the user closes the browser from the hidden tab
+    this.boundVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        engine.emit('save_requested', {});
+      }
+      // Note: We intentionally do NOT reload state when visibility becomes 'visible'
+      // to prevent resetting user progress when they switch back to this tab
+    };
+    document.addEventListener('visibilitychange', this.boundVisibilityChange);
   }
 
   private startAutoSave(): void {
@@ -47,5 +59,6 @@ export class SavePlugin implements IPlugin {
   cleanup(): void {
     this.stopAutoSave();
     window.removeEventListener('beforeunload', this.boundBeforeUnload);
+    document.removeEventListener('visibilitychange', this.boundVisibilityChange);
   }
 }

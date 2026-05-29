@@ -9,6 +9,7 @@ export class SupabasePlugin implements IPlugin {
 
   private engine!: IEngine;
   private userId: string | null = null;
+  private hasLoadedSave = false;
 
   async init(engine: IEngine): Promise<void> {
     this.engine = engine;
@@ -17,12 +18,19 @@ export class SupabasePlugin implements IPlugin {
     engine.storage.registerTable('leaderboard', { table: 'leaderboard', userScoped: true });
 
     engine.on('auth_success', async (event: GameEvent<Player>) => {
+      // Only load save once per session to prevent state resets on token refresh
+      // or visibility change. If userId changes, it's a different user - reload.
+      if (this.hasLoadedSave && this.userId === event.payload.id) {
+        return;
+      }
       this.userId = event.payload.id;
       await this.loadSave();
+      this.hasLoadedSave = true;
     });
 
     engine.on('auth_signout', () => {
       this.userId = null;
+      this.hasLoadedSave = false;
     });
 
     engine.on('save_requested', async () => {
@@ -31,9 +39,11 @@ export class SupabasePlugin implements IPlugin {
 
     const authPlugin = engine.getPlugin<AuthPlugin>('auth');
     const existingPlayer = authPlugin?.getPlayer();
-    if (existingPlayer) {
+    if (existingPlayer && !this.hasLoadedSave) {
       this.userId = existingPlayer.id;
-      void this.loadSave();
+      void this.loadSave().then(() => {
+        this.hasLoadedSave = true;
+      });
     }
   }
 

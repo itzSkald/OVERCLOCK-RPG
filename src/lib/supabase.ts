@@ -9,4 +9,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    // Prevent automatic session refresh on visibility change which can cause
+    // auth state events to fire and potentially reload/reset game state
+    autoRefreshToken: true,
+    persistSession: true,
+    // Disable automatic detection of session from URL (prevents reloads on tab switch)
+    detectSessionInUrl: false,
+  },
+});
