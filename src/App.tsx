@@ -22,6 +22,7 @@ import { AchievementPlugin } from './plugins/AchievementPlugin';
 import { ShopPlugin } from './plugins/ShopPlugin';
 import { TournamentPlugin } from './plugins/TournamentPlugin';
 import { SetPlugin } from './plugins/SetPlugin';
+import { ClanPlugin } from './plugins/ClanPlugin';
 
 import { LoginScreen } from './components/auth/LoginScreen';
 import { RegisterScreen } from './components/auth/RegisterScreen';
@@ -56,6 +57,7 @@ function createEngine(): GameEngine {
   engine.register(new ShopPlugin());
   engine.register(new TournamentPlugin());
   engine.register(new SetPlugin());
+  engine.register(new ClanPlugin());
 
   return engine;
 }

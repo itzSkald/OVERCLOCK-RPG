@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CircuitBoard, Zap, ChevronDown, Trophy, Clock, Award, ShoppingBag, Swords } from 'lucide-react';
+import { CircuitBoard, Zap, ChevronDown, Trophy, Clock, Award, ShoppingBag, Swords, Users } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import type { Player } from '../../engine/types';
 import { CyberHUD } from './CyberHUD';
@@ -14,6 +14,7 @@ import { AchievementsScreen } from './AchievementsScreen';
 import { AchievementToast } from './AchievementToast';
 import { ShopScreen } from './ShopScreen';
 import { TournamentScreen } from './TournamentScreen';
+import { ClanScreen } from './ClanScreen';
 import { useGameState } from '../../hooks/useGameState';
 import { Tooltip, TooltipLabel, TooltipText } from './Tooltip';
 import type { OverclockPlugin } from '../../plugins/OverclockPlugin';
@@ -133,6 +134,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showTournament, setShowTournament] = useState(false);
+  const [showClan, setShowClan] = useState(false);
   const [mobileDrawer, setMobileDrawer] = useState<MobileDrawer>(null);
 
   const inventoryCount = useGameState(engine, s => (s.inventory ?? []).length);
@@ -166,6 +168,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
       {showAchievements && <AchievementsScreen engine={engine} onClose={() => setShowAchievements(false)} />}
       {showShop && <ShopScreen engine={engine} onClose={() => setShowShop(false)} />}
       {showTournament && <TournamentScreen engine={engine} onClose={() => setShowTournament(false)} />}
+      {showClan && <ClanScreen engine={engine} onClose={() => setShowClan(false)} />}
       <AchievementToast engine={engine} />
     </>
   );
@@ -227,6 +230,12 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
             label="TOURNEY"
             activeColor="#ffaa00"
             onClick={() => setShowTournament(true)}
+          />
+          <MobileTab
+            icon={<Users size={15} color="#3a4a5a" />}
+            label="CLAN"
+            activeColor="#00f5ff"
+            onClick={() => setShowClan(true)}
           />
           <MobileTab
             icon={<Trophy size={15} color="#3a4a5a" />}
@@ -405,6 +414,25 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
             >
               <Swords size={20} />
               <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>TOURNEY</div>
+            </button>
+          </Tooltip>
+
+          {/* Clan */}
+          <Tooltip content={<><TooltipLabel label="CLAN" color="#00f5ff" /><TooltipText>Join or create a clan to team up with other players.</TooltipText></>} position="left">
+            <button
+              onClick={() => setShowClan(true)}
+              style={{
+                width: '100%', background: '#080810',
+                border: '1px solid #0a2838',
+                color: '#2a4a5a', padding: '12px 10px',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a4a5a'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <Users size={20} />
+              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>CLAN</div>
             </button>
           </Tooltip>
 
