@@ -7,6 +7,7 @@ export class AuthPlugin implements IPlugin {
 
   private engine!: IEngine;
   private currentPlayer: Player | null = null;
+  private isInitialSessionHandled = false;
 
   async init(engine: IEngine): Promise<void> {
     this.engine = engine;
@@ -19,10 +20,20 @@ export class AuthPlugin implements IPlugin {
     supabase.auth.onAuthStateChange((event, session) => {
       (async () => {
         if (event === 'SIGNED_IN' && session?.user) {
+          // Only handle auth success if this is a NEW sign-in, not a token refresh
+          // for an already authenticated user. This prevents state resets on tab switches.
+          if (this.currentPlayer?.id === session.user.id) {
+            // Same user, just a token refresh - skip reloading state
+            return;
+          }
           await this.handleAuthSuccess(session.user.id, session.user.email ?? '');
         } else if (event === 'SIGNED_OUT') {
           this.currentPlayer = null;
+          this.isInitialSessionHandled = false;
           this.engine.emit('auth_signout', {});
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Token was refreshed but user is the same - do nothing
+          // This prevents unnecessary state reloads on visibility change
         }
       })();
     });
