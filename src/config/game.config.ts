@@ -829,30 +829,61 @@ export interface ChallengeTemplateDef {
 
 export const DAILY_CONFIG = {
   /** Number of daily challenges generated per day per player. */
-  challengesPerDay: 3,
+  challengesPerDay: 20,
   /** Maximum diamonds awarded per completed challenge. */
-  maxDiamondReward: 6,
+  maxDiamondReward: 10,
   /** Diamond reward scales with highestStage / this divisor. */
   diamondStageDivisor: 20,
 
   /** Difficulty weight per challenge type (affects diamond reward scaling). */
   diamondDifficulty: {
-    kill_enemies:  1,
-    earn_gold:     1,
-    tap_damage:    1.5,
-    use_skills:    1.5,
-    defeat_bosses: 3,
-    reach_stage:   2,
+    kill_enemies:    1,
+    earn_gold:       1,
+    tap_damage:      1.5,
+    use_skills:      1.5,
+    defeat_bosses:   3,
+    reach_stage:     2,
+    kill_streak:     2,
+    earn_gold_fast:  2,
+    overclock_tap:   1.5,
+    clear_stages:    1.5,
+    boss_streak:     3,
+    spend_gold:      1,
+    collect_crits:   2,
+    idle_kills:      1,
+    skill_combos:    2.5,
+    tap_frenzy:      1.5,
+    reach_overclock: 3,
+    gold_hoard:      2,
+    endurance:       2,
+    precision_hits:  1.5,
   } as Record<string, number>,
 } as const;
 
 export const CHALLENGE_TEMPLATES: ChallengeTemplateDef[] = [
-  { type: 'kill_enemies',  label: 'Eliminate {n} enemies',  targetFn: s => 10 + s * 2,         rewardFn: s => 50 + s * 20  },
-  { type: 'earn_gold',     label: 'Earn {n} gold',           targetFn: s => 100 + s * 50,        rewardFn: s => 30 + s * 15  },
-  { type: 'reach_stage',   label: 'Reach stage {n}',         targetFn: s => Math.max(s + 3, 5), rewardFn: s => 80 + s * 30  },
-  { type: 'use_skills',    label: 'Use {n} skills',           targetFn: () => 5,                 rewardFn: s => 40 + s * 10  },
-  { type: 'defeat_bosses', label: 'Defeat {n} bosses',       targetFn: () => 2,                 rewardFn: s => 100 + s * 40 },
-  { type: 'tap_damage',    label: 'Deal {n} tap damage',     targetFn: s => 200 + s * 100,      rewardFn: s => 60 + s * 25  },
+  // ── Basic ─────────────────────────────────────────────────────────────────
+  { type: 'kill_enemies',    label: 'Eliminate {n} enemies',          targetFn: s => 10 + s * 2,              rewardFn: s => 50  + s * 20  },
+  { type: 'earn_gold',       label: 'Earn {n} gold',                   targetFn: s => 100 + s * 50,            rewardFn: s => 30  + s * 15  },
+  { type: 'reach_stage',     label: 'Reach stage {n}',                 targetFn: s => Math.max(s + 3, 5),     rewardFn: s => 80  + s * 30  },
+  { type: 'use_skills',      label: 'Use skills {n} times',            targetFn: () => 5,                      rewardFn: s => 40  + s * 10  },
+  { type: 'defeat_bosses',   label: 'Defeat {n} boss(es)',             targetFn: () => 2,                      rewardFn: s => 100 + s * 40  },
+  { type: 'tap_damage',      label: 'Deal {n} tap damage',             targetFn: s => 200 + s * 100,           rewardFn: s => 60  + s * 25  },
+  // ── Medium ────────────────────────────────────────────────────────────────
+  { type: 'kill_streak',     label: 'Kill {n} enemies without dying',  targetFn: s => 15 + s * 3,             rewardFn: s => 70  + s * 25  },
+  { type: 'earn_gold_fast',  label: 'Earn {n} gold in one stage',      targetFn: s => 80 + s * 40,            rewardFn: s => 90  + s * 30  },
+  { type: 'overclock_tap',   label: 'Land {n} critical taps',          targetFn: s => 10 + s * 2,             rewardFn: s => 75  + s * 20  },
+  { type: 'clear_stages',    label: 'Clear {n} stages',                targetFn: () => 3,                      rewardFn: s => 60  + s * 20  },
+  { type: 'boss_streak',     label: 'Defeat {n} bosses in a row',      targetFn: () => 3,                      rewardFn: s => 120 + s * 50  },
+  { type: 'spend_gold',      label: 'Spend {n} gold on upgrades',      targetFn: s => 150 + s * 60,           rewardFn: s => 40  + s * 15  },
+  { type: 'collect_crits',   label: 'Land {n} critical hits',          targetFn: s => 20 + s * 4,             rewardFn: s => 80  + s * 25  },
+  { type: 'idle_kills',      label: 'Get {n} idle kills',              targetFn: s => 30 + s * 5,             rewardFn: s => 50  + s * 15  },
+  // ── Hard ──────────────────────────────────────────────────────────────────
+  { type: 'skill_combos',    label: 'Chain {n} skills without missing', targetFn: () => 4,                    rewardFn: s => 130 + s * 45  },
+  { type: 'tap_frenzy',      label: 'Deal {n} total damage tapping',   targetFn: s => 500 + s * 200,          rewardFn: s => 90  + s * 30  },
+  { type: 'reach_overclock', label: 'Reach overclock {n}',             targetFn: s => Math.max(1, Math.floor(s / 5)), rewardFn: s => 150 + s * 60 },
+  { type: 'gold_hoard',      label: 'Accumulate {n} total gold',       targetFn: s => 300 + s * 100,          rewardFn: s => 100 + s * 35  },
+  { type: 'endurance',       label: 'Survive {n} enemy waves',         targetFn: s => 5 + s,                  rewardFn: s => 110 + s * 40  },
+  { type: 'precision_hits',  label: 'Land {n} hits without missing',   targetFn: s => 25 + s * 5,             rewardFn: s => 70  + s * 22  },
 ];
 
 // ── SETS ──────────────────────────────────────────────────────────────────────

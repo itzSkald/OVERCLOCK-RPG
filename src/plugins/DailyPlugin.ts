@@ -90,6 +90,16 @@ export class DailyPlugin implements IPlugin {
   private tapDamage = 0;
   private skillsUsed = 0;
   private bossesKilled = 0;
+  private critHits = 0;
+  private consecutiveKills = 0;
+  private consecutiveBosses = 0;
+  private lastSkillTime = 0;
+  private skillChain = 0;
+  private consecutiveTaps = 0;
+  private idleKills = 0;
+  private goldSpent = 0;
+  private stagesCleared = 0;
+  private wavesEndured = 0;
 
   async init(engine: IEngine): Promise<void> {
     this.engine = engine;
@@ -113,10 +123,22 @@ export class DailyPlugin implements IPlugin {
     this.unsubs.push(
       engine.on('enemy_death', (event: GameEvent<{ enemy: { isBoss: boolean } }>) => {
         this.killCount++;
+        this.consecutiveKills++;
         this.incrementChallenge('kill_enemies', 1);
+        this.incrementChallenge('kill_streak', 1);
+        this.incrementChallenge('endurance', 1);
         if (event.payload.enemy.isBoss) {
           this.bossesKilled++;
+          this.consecutiveBosses++;
           this.incrementChallenge('defeat_bosses', 1);
+          this.incrementChallenge('boss_streak', 1);
+        } else {
+          this.consecutiveBosses = 0;
+        }
+        // idle kills: enemies killed without tapping (tap_damage hasn't changed)
+        if (this.tapDamage === 0) {
+          this.idleKills++;
+          this.incrementChallenge('idle_kills', 1);
         }
       })
     );
@@ -124,23 +146,64 @@ export class DailyPlugin implements IPlugin {
     this.unsubs.push(
       engine.on('stage_clear', (event: GameEvent<{ goldReward: number }>) => {
         this.goldEarned += event.payload.goldReward;
+        this.stagesCleared++;
+        this.wavesEndured++;
         this.incrementChallenge('earn_gold', event.payload.goldReward);
+        this.incrementChallenge('earn_gold_fast', event.payload.goldReward);
+        this.incrementChallenge('clear_stages', 1);
         const currentStage = this.engine.state.stage;
         this.updateMaxChallenge('reach_stage', currentStage);
+        // Reset per-stage counters
+        this.tapDamage = 0;
       })
     );
 
     this.unsubs.push(
       engine.on('skill_activated', () => {
         this.skillsUsed++;
+        const now = Date.now();
+        if (now - this.lastSkillTime < 3000) {
+          this.skillChain++;
+          this.incrementChallenge('skill_combos', 1);
+        } else {
+          this.skillChain = 1;
+        }
+        this.lastSkillTime = now;
         this.incrementChallenge('use_skills', 1);
       })
     );
 
     this.unsubs.push(
-      engine.on('enemy_hit', (event: GameEvent<{ damage: number }>) => {
+      engine.on('enemy_hit', (event: GameEvent<{ damage: number; isCrit?: boolean }>) => {
         this.tapDamage += event.payload.damage;
+        this.consecutiveTaps++;
         this.incrementChallenge('tap_damage', event.payload.damage);
+        this.incrementChallenge('tap_frenzy', event.payload.damage);
+        this.incrementChallenge('precision_hits', 1);
+        if (event.payload.isCrit) {
+          this.critHits++;
+          this.incrementChallenge('overclock_tap', 1);
+          this.incrementChallenge('collect_crits', 1);
+        }
+      })
+    );
+
+    this.unsubs.push(
+      engine.on('gold_spent', (event: GameEvent<{ amount: number }>) => {
+        this.goldSpent += event.payload.amount;
+        this.incrementChallenge('spend_gold', event.payload.amount);
+      })
+    );
+
+    this.unsubs.push(
+      engine.on('gold_earned', (event: GameEvent<{ amount: number }>) => {
+        this.incrementChallenge('gold_hoard', event.payload.amount);
+      })
+    );
+
+    this.unsubs.push(
+      engine.on('overclock', (event: GameEvent<{ count: number }>) => {
+        this.updateMaxChallenge('reach_overclock', event.payload.count);
       })
     );
   }
