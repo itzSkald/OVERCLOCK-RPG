@@ -170,6 +170,9 @@ export interface SkillCooldownState {
 export interface GameState {
   stage: number;
   highestStage: number;
+  maxStage: number;
+  tournamentMaxStage: number;
+  tournamentSessionId: string | null;
   enemy: Enemy | null;
   gold: number;
   overclockCount: number;

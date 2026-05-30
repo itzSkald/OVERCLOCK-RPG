@@ -75,13 +75,11 @@ export const CyberHUD: React.FC<CyberHUDProps> = ({ engine, playerHandle }) => {
         <span className="font-pixel glow-amber" style={{ color: '#ffaa00', fontSize: '10px' }}>{formatNumber(gold)}</span>
       </div>
 
-      {/* Diamonds */}
-      {diamonds > 0 && (
-        <div className="flex items-center gap-1">
-          <span style={{ color: '#00e5ff', fontFamily: 'var(--font-mono)', fontSize: '9px' }}>◈</span>
-          <span className="font-pixel" style={{ color: '#00e5ff', fontSize: '10px' }}>{diamonds}</span>
-        </div>
-      )}
+      {/* Diamonds - always show */}
+      <div className="flex items-center gap-1">
+        <span style={{ color: '#00e5ff', fontFamily: 'var(--font-mono)', fontSize: '9px' }}>◈</span>
+        <span className="font-pixel" style={{ color: '#00e5ff', fontSize: '10px' }}>{diamonds}</span>
+      </div>
 
       {/* Overclocks */}
       <div className="flex items-center gap-1">

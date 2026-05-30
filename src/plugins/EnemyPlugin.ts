@@ -91,7 +91,8 @@ export class EnemyPlugin implements IPlugin {
   private spawnForStage(stage: number): void {
     const enemy = spawnEnemy(stage);
     const highestStage = Math.max(stage, this.engine.state.highestStage ?? 1);
-    this.engine.updateState({ enemy, stage, highestStage });
+    const maxStage = Math.max(highestStage, this.engine.state.maxStage ?? 1);
+    this.engine.updateState({ enemy, stage, highestStage, maxStage });
 
     if (enemy.isBoss) {
       this.bossTimer = ENEMY_CONFIG.bossTimeoutSeconds;

@@ -30,8 +30,18 @@ export class MoboPlugin implements IPlugin {
     const next = this.getNextTierDef();
     if (!next) return false;
 
+    // Check if player has enough diamonds
+    const diamonds = this.engine.state.diamonds ?? 0;
+    if (diamonds < next.diamondCost) return false;
+
+    // Check and spend gold
     const goldPlugin = this.engine.getPlugin<GoldPlugin>('gold');
     if (!goldPlugin?.spend(next.goldCost)) return false;
+
+    // Spend diamonds
+    if (next.diamondCost > 0) {
+      this.engine.updateState({ diamonds: diamonds - next.diamondCost });
+    }
 
     // Expand equippedItems arrays for new slot counts
     const equipped = { ...(this.engine.state.equippedItems) };

@@ -59,19 +59,16 @@ function TournamentCard({
   participantCount,
   myEntry,
   myUserId,
-  diamonds,
   onSelect,
 }: {
   tournament: Tournament;
   participantCount: number;
   myEntry: TournamentEntry | null;
   myUserId: string | null;
-  diamonds: number;
   onSelect: () => void;
 }) {
   const statusColor = STATUS_COLORS[tournament.status];
   const isFull = participantCount >= tournament.player_cap;
-  const canAfford = diamonds >= tournament.entry_fee_diamonds;
   const isJoined = !!myEntry;
 
   return (
@@ -121,11 +118,9 @@ function TournamentCard({
         <span style={{ color: '#00e5ff', fontFamily: 'var(--font-mono)', fontSize: '8px' }}>
           {tournament.prize_diamonds} ◈
         </span>
-        {tournament.entry_fee_diamonds > 0 && (
-          <span style={{ color: canAfford || isJoined ? '#ffaa00' : '#ff4444', fontFamily: 'var(--font-mono)', fontSize: '8px' }}>
-            {isJoined ? 'JOINED' : `${tournament.entry_fee_diamonds} ◈`}
-          </span>
-        )}
+        <span style={{ color: '#39ff14', fontFamily: 'var(--font-mono)', fontSize: '8px' }}>
+          {isJoined ? 'JOINED' : 'FREE'}
+        </span>
         <ChevronRight size={10} color="#2a3a4a" />
       </div>
     </button>
@@ -168,6 +163,8 @@ function TournamentDetail({
   myUserId,
   diamonds,
   highestStage,
+  joinWindowOpen,
+  joinWindowRemaining,
   onJoin,
   onBack,
   onRefresh,
@@ -179,6 +176,8 @@ function TournamentDetail({
   myUserId: string | null;
   diamonds: number;
   highestStage: number;
+  joinWindowOpen: boolean;
+  joinWindowRemaining: string | null;
   onJoin: () => Promise<void>;
   onBack: () => void;
   onRefresh: () => void;
@@ -187,7 +186,6 @@ function TournamentDetail({
   const [joinError, setJoinError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const isFull = participantCount >= tournament.player_cap;
-  const canAfford = diamonds >= tournament.entry_fee_diamonds;
   const isJoined = !!myEntry;
   const myPosition = myEntry ? leaderboard.findIndex(e => e.user_id === myUserId) + 1 : null;
   const statusColor = STATUS_COLORS[tournament.status];
@@ -242,7 +240,7 @@ function TournamentDetail({
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
           {[
             { label: 'Prize Pool', value: `${tournament.prize_diamonds} ◈`, color: '#00e5ff' },
-            { label: 'Entry Fee', value: tournament.entry_fee_diamonds > 0 ? `${tournament.entry_fee_diamonds} ◈` : 'FREE', color: tournament.entry_fee_diamonds > 0 ? '#ffaa00' : '#39ff14' },
+            { label: 'Entry', value: 'FREE', color: '#39ff14' },
             { label: 'Players', value: `${participantCount}/${tournament.player_cap}`, color: isFull && !isJoined ? '#ff4444' : '#e0e8f0' },
           ].map(stat => (
             <div key={stat.label} style={{ background: '#06060e', border: '1px solid #1a1a2a', padding: '6px 10px', flex: 1, minWidth: 80 }}>
@@ -289,32 +287,36 @@ function TournamentDetail({
               </div>
             </div>
           </div>
-        ) : tournament.status !== 'upcoming' && (
+        ) : tournament.status === 'active' && (
           <div style={{ margin: '10px 0' }}>
-            {isFull ? (
+            {!joinWindowOpen ? (
+              <div className="font-pixel" style={{ color: '#ff4444', fontSize: '8px', textAlign: 'center', padding: '10px', border: '1px solid #ff444422' }}>
+                JOIN WINDOW CLOSED
+              </div>
+            ) : isFull ? (
               <div className="font-pixel" style={{ color: '#ff4444', fontSize: '8px', textAlign: 'center', padding: '10px', border: '1px solid #ff444422' }}>
                 BRACKET FULL
               </div>
             ) : (
               <>
-                <button
-                  onClick={handleJoin}
-                  disabled={joining || !canAfford}
-                  className="font-pixel w-full"
-                  style={{
-                    background: canAfford ? '#130a00' : '#0a0808', border: `1px solid ${canAfford ? '#ffaa00' : '#2a1a00'}`,
-                    color: canAfford ? '#ffaa00' : '#3a2a00', padding: '11px', fontSize: '8px', letterSpacing: '2px',
-                    cursor: canAfford && !joining ? 'pointer' : 'not-allowed',
-                    boxShadow: canAfford ? '0 0 10px rgba(255,170,0,0.12)' : 'none',
-                  }}
-                >
-                  {joining ? 'JOINING...' : tournament.entry_fee_diamonds > 0 ? `JOIN — ${tournament.entry_fee_diamonds} ◈` : 'JOIN FREE'}
-                </button>
-                {!canAfford && (
-                  <div style={{ color: '#ff4444', fontFamily: 'var(--font-mono)', fontSize: '8px', textAlign: 'center', marginTop: 5 }}>
-                    Need {tournament.entry_fee_diamonds} ◈ to enter
+                {joinWindowRemaining && (
+                  <div style={{ color: '#ffaa00', fontFamily: 'var(--font-mono)', fontSize: '8px', textAlign: 'center', marginBottom: 6 }}>
+                    Join window closes in {joinWindowRemaining}
                   </div>
                 )}
+                <button
+                  onClick={handleJoin}
+                  disabled={joining}
+                  className="font-pixel w-full"
+                  style={{
+                    background: '#130a00', border: '1px solid #ffaa00',
+                    color: '#ffaa00', padding: '11px', fontSize: '8px', letterSpacing: '2px',
+                    cursor: !joining ? 'pointer' : 'not-allowed',
+                    boxShadow: '0 0 10px rgba(255,170,0,0.12)',
+                  }}
+                >
+                  {joining ? 'JOINING...' : 'JOIN FREE'}
+                </button>
                 {joinError && (
                   <div style={{ color: '#ff4444', fontFamily: 'var(--font-mono)', fontSize: '8px', textAlign: 'center', marginTop: 5 }}>
                     {joinError}
@@ -445,6 +447,14 @@ export const TournamentScreen: React.FC<TournamentScreenProps> = ({ engine, onCl
               myUserId={myUserId}
               diamonds={diamonds}
               highestStage={highestStage}
+              joinWindowOpen={plugin?.canJoin(selectedTournament.id).canJoin ?? false}
+              joinWindowRemaining={(() => {
+                const ms = plugin?.getJoinWindowRemaining(selectedTournament.id);
+                if (ms == null || ms <= 0) return null;
+                const m = Math.floor(ms / 60000);
+                const s = Math.floor((ms % 60000) / 1000);
+                return m > 0 ? `${m}m ${s}s` : `${s}s`;
+              })()}
               onJoin={() => handleJoin(selectedTournament.id)}
               onBack={() => setSelectedId(null)}
               onRefresh={() => plugin?.refreshLeaderboard(selectedTournament.id)}
@@ -471,7 +481,6 @@ export const TournamentScreen: React.FC<TournamentScreenProps> = ({ engine, onCl
                           participantCount={plugin?.getParticipantCount(t.id) ?? 0}
                           myEntry={plugin?.getMyEntry(t.id) ?? null}
                           myUserId={myUserId}
-                          diamonds={diamonds}
                           onSelect={() => setSelectedId(t.id)}
                         />
                       ))}
@@ -490,7 +499,6 @@ export const TournamentScreen: React.FC<TournamentScreenProps> = ({ engine, onCl
                           participantCount={plugin?.getParticipantCount(t.id) ?? 0}
                           myEntry={plugin?.getMyEntry(t.id) ?? null}
                           myUserId={myUserId}
-                          diamonds={diamonds}
                           onSelect={() => setSelectedId(t.id)}
                         />
                       ))}

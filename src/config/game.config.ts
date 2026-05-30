@@ -355,20 +355,21 @@ export interface MoboTierDef {
   name: string;
   revision: string;
   goldCost: number;
+  diamondCost: number;
   ramSlots: number;
   expansionSlots: number;
   description: string;
 }
 
 export const MOBO_TIERS: MoboTierDef[] = [
-  { tier: 0, name: 'BUDGET BOARD',      revision: 'REV.1', goldCost: 0,         ramSlots: 1, expansionSlots: 1, description: 'Entry level. Single RAM bank, single expansion bay.' },
-  { tier: 1, name: 'MODDED BOARD',      revision: 'REV.2', goldCost: 500,       ramSlots: 2, expansionSlots: 1, description: 'Dual RAM channel. Increased memory bandwidth.' },
-  { tier: 2, name: 'OVERCLOCKED BOARD', revision: 'REV.3', goldCost: 2_500,     ramSlots: 3, expansionSlots: 2, description: 'Triple RAM. Second expansion bay. Serious throughput.' },
-  { tier: 3, name: 'PHANTOM BOARD',     revision: 'REV.4', goldCost: 10_000,    ramSlots: 4, expansionSlots: 2, description: 'Quad RAM. Full expansion. Maximum hardware density.' },
-  { tier: 4, name: 'SILICON GHOST',     revision: 'REV.X', goldCost: 50_000,    ramSlots: 4, expansionSlots: 3, description: 'Experimental board. Three expansion bays. Undocumented specs.' },
-  { tier: 5, name: 'GODBOARD',          revision: 'REV.Y', goldCost: 250_000,   ramSlots: 5, expansionSlots: 3, description: 'Divine architecture. Five RAM channels. Near-infinite headroom.' },
-  { tier: 6, name: 'CHAOS BOARD',       revision: 'REV.Z', goldCost: 1_000_000, ramSlots: 6, expansionSlots: 4, description: 'Chaotic design. Six RAM slots. Fourth expansion bay.' },
-  { tier: 7, name: 'OMEGA RIG',         revision: 'FINAL', goldCost: 5_000_000, ramSlots: 6, expansionSlots: 6, description: 'The end of hardware. Six RAM, six expansion. Maximum slots.' },
+  { tier: 0, name: 'BUDGET BOARD',      revision: 'REV.1', goldCost: 0,         diamondCost: 0,   ramSlots: 1, expansionSlots: 1, description: 'Entry level. Single RAM bank, single expansion bay.' },
+  { tier: 1, name: 'MODDED BOARD',      revision: 'REV.2', goldCost: 0,         diamondCost: 5,   ramSlots: 2, expansionSlots: 1, description: 'Dual RAM channel. Increased memory bandwidth.' },
+  { tier: 2, name: 'OVERCLOCKED BOARD', revision: 'REV.3', goldCost: 2_500,     diamondCost: 10,  ramSlots: 3, expansionSlots: 2, description: 'Triple RAM. Second expansion bay. Serious throughput.' },
+  { tier: 3, name: 'PHANTOM BOARD',     revision: 'REV.4', goldCost: 10_000,    diamondCost: 25,  ramSlots: 4, expansionSlots: 2, description: 'Quad RAM. Full expansion. Maximum hardware density.' },
+  { tier: 4, name: 'SILICON GHOST',     revision: 'REV.X', goldCost: 50_000,    diamondCost: 50,  ramSlots: 4, expansionSlots: 3, description: 'Experimental board. Three expansion bays. Undocumented specs.' },
+  { tier: 5, name: 'GODBOARD',          revision: 'REV.Y', goldCost: 250_000,   diamondCost: 100, ramSlots: 5, expansionSlots: 3, description: 'Divine architecture. Five RAM channels. Near-infinite headroom.' },
+  { tier: 6, name: 'CHAOS BOARD',       revision: 'REV.Z', goldCost: 1_000_000, diamondCost: 200, ramSlots: 6, expansionSlots: 4, description: 'Chaotic design. Six RAM slots. Fourth expansion bay.' },
+  { tier: 7, name: 'OMEGA RIG',         revision: 'FINAL', goldCost: 5_000_000, diamondCost: 500, ramSlots: 6, expansionSlots: 6, description: 'The end of hardware. Six RAM, six expansion. Maximum slots.' },
 ];
 
 // ── ITEMS ─────────────────────────────────────────────────────────────────────

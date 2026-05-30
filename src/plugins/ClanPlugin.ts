@@ -22,6 +22,7 @@ export interface ClanMember {
   handle: string;
   role: 'leader' | 'officer' | 'member';
   highest_stage: number;
+  max_stage: number;
   overclock_count: number;
   joined_at: string;
 }
@@ -122,7 +123,7 @@ export class ClanPlugin implements IPlugin {
     const { data: membership } = await this.engine.storage.load<ClanMember>(
       'clan_members',
       { user_id: this.userId },
-      'id, clan_id, user_id, handle, role, highest_stage, overclock_count, joined_at'
+      'id, clan_id, user_id, handle, role, highest_stage, max_stage, overclock_count, joined_at'
     );
 
     if (!membership) {
@@ -151,13 +152,13 @@ export class ClanPlugin implements IPlugin {
     const { data } = await this.engine.storage.loadMany<ClanMember>(
       'clan_members',
       { clan_id: clanId },
-      'id, clan_id, user_id, handle, role, highest_stage, overclock_count, joined_at'
+      'id, clan_id, user_id, handle, role, highest_stage, max_stage, overclock_count, joined_at'
     );
     this.clanMembers = data.sort((a, b) => {
       const roleOrder = { leader: 0, officer: 1, member: 2 };
       const roleDiff = roleOrder[a.role] - roleOrder[b.role];
       if (roleDiff !== 0) return roleDiff;
-      return b.highest_stage - a.highest_stage;
+      return b.max_stage - a.max_stage;
     });
   }
 
@@ -192,9 +193,10 @@ export class ClanPlugin implements IPlugin {
     if (!this.myMembership || !this.userId) return;
 
     const newStage = this.engine.state.highestStage;
+    const newMaxStage = this.engine.state.maxStage ?? 1;
     const newOC = this.engine.state.totalOverclocks;
 
-    if (newStage <= this.myMembership.highest_stage && newOC <= this.myMembership.overclock_count) {
+    if (newStage <= this.myMembership.highest_stage && newMaxStage <= this.myMembership.max_stage && newOC <= this.myMembership.overclock_count) {
       return;
     }
 
@@ -203,6 +205,7 @@ export class ClanPlugin implements IPlugin {
       {
         id: this.myMembership.id,
         highest_stage: Math.max(newStage, this.myMembership.highest_stage),
+        max_stage: Math.max(newMaxStage, this.myMembership.max_stage),
         overclock_count: Math.max(newOC, this.myMembership.overclock_count),
       },
       'id'
