@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { X, Clock, CheckCircle, Coins } from 'lucide-react';
+import { X, Clock, CheckCircle, Diamond } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import type { DailyPlugin, DailyChallenge } from '../../plugins/DailyPlugin';
+import { getDiamondReward } from '../../plugins/DailyPlugin';
+import { useGameState } from '../../hooks/useGameState';
 
 interface DailiesScreenProps {
   engine: GameEngine;
@@ -17,6 +19,8 @@ function formatNumber(n: number): string {
 export const DailiesScreen: React.FC<DailiesScreenProps> = ({ engine, onClose }) => {
   const plugin = engine.getPlugin<DailyPlugin>('daily');
   const [challenges, setChallenges] = useState<DailyChallenge[]>(plugin?.getChallenges() ?? []);
+  const highestStage = useGameState(engine, s => s.highestStage);
+  const diamonds = useGameState(engine, s => s.diamonds ?? 0);
 
   const refresh = useCallback(() => {
     setChallenges([...(plugin?.getChallenges() ?? [])]);
@@ -51,6 +55,10 @@ export const DailiesScreen: React.FC<DailiesScreenProps> = ({ engine, onClose })
             <span className="font-pixel" style={{ color: '#00f5ff', fontSize: '9px', letterSpacing: '2px' }}>DAILY OPS</span>
           </div>
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Diamond size={10} color="#00e5ff" />
+              <span style={{ color: '#00e5ff', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>{diamonds}</span>
+            </div>
             <span style={{ color: '#5a7a8a', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>
               {completedCount}/{challenges.length}
             </span>
@@ -70,6 +78,7 @@ export const DailiesScreen: React.FC<DailiesScreenProps> = ({ engine, onClose })
 
           {challenges.map((c) => {
             const pct = Math.min(100, (c.current_value / c.target_value) * 100);
+            const diamondReward = getDiamondReward(c.challenge_type, highestStage);
             return (
               <div
                 key={c.id}
@@ -97,9 +106,9 @@ export const DailiesScreen: React.FC<DailiesScreenProps> = ({ engine, onClose })
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Coins size={10} color="#ffaa00" />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#ffaa00' }}>
-                      {formatNumber(c.reward_gold)}
+                    <Diamond size={10} color="#00e5ff" />
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#00e5ff' }}>
+                      +{diamondReward}
                     </span>
                   </div>
                 </div>
