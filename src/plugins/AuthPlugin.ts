@@ -23,6 +23,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import * as auth from '../lib/db/auth';
+import { getClient } from '../lib/db/client';
 import { AUTH_CONFIG } from '../config/game.config';
 import type { IPlugin, IEngine, Player } from '../engine/types';
 
@@ -231,30 +232,26 @@ export class AuthPlugin implements IPlugin {
 
   /**
    * Query the profiles table to find which email belongs to a given handle.
-   * This uses the Supabase client directly with the anon key, so it works
-   * before the user is authenticated (the "Anyone can read handles" RLS policy
-   * allows this SELECT).
+   * Uses the Supabase client directly so it works before the user is
+   * authenticated — the anon "Anyone can read handles for login" RLS policy
+   * permits this SELECT.
    */
   private async resolveEmailForHandle(handle: string): Promise<string | null> {
     try {
-      // We need to join profiles → auth.users to get the email.
-      // Supabase does not expose auth.users to the client directly, so we
-      // use the profiles id → auth.users id relationship via an RPC or a
-      // secondary lookup using the session after sign-in.
-      //
-      // Strategy: store the email in profiles so it can be retrieved here.
-      // This requires an `email` column on profiles. As a fallback during
-      // migration, we attempt the lookup and return null if column missing.
-      const { data, error } = await (this.engine.storage as any)
-        .getClient()
+      const { data, error } = await getClient()
         .from('profiles')
         .select('email')
         .eq('handle', handle)
         .maybeSingle();
 
-      if (error || !data?.email) return null;
+      if (error) {
+        console.error('[AuthPlugin] handle lookup error:', error.message);
+        return null;
+      }
+      if (!data?.email) return null;
       return data.email as string;
-    } catch {
+    } catch (err) {
+      console.error('[AuthPlugin] handle lookup exception:', err);
       return null;
     }
   }
