@@ -19,8 +19,15 @@ export function getDiamondReward(challengeType: string, highestStage: number): n
   return Math.min(DAILY_CONFIG.maxDiamondReward, Math.floor(base * weight));
 }
 
-function getUTCDateString(): string {
-  return new Date().toISOString().split('T')[0];
+/**
+ * Get the current date string in London timezone (Europe/London).
+ * Daily challenges reset at midnight London time.
+ */
+function getLondonDateString(): string {
+  const now = new Date();
+  // Format date in London timezone
+  const londonDate = now.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+  return londonDate; // Returns YYYY-MM-DD format
 }
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
@@ -116,7 +123,7 @@ export class DailyPlugin implements IPlugin {
   private async loadOrGenerateChallenges(): Promise<void> {
     if (!this.userId) return;
 
-    const today = getUTCDateString();
+    const today = getLondonDateString();
     const { data } = await this.engine.storage.loadMany('daily_challenges', {
       user_id: this.userId,
       challenge_date: today,

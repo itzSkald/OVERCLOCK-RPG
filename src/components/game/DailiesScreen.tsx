@@ -135,7 +135,7 @@ export const DailiesScreen: React.FC<DailiesScreenProps> = ({ engine, onClose })
         {/* Footer */}
         <div style={{ padding: '10px 16px', borderTop: '1px solid #1a2a3a' }}>
           <div style={{ color: '#3a4a5a', fontFamily: 'var(--font-mono)', fontSize: '9px', textAlign: 'center' }}>
-            Challenges reset daily at 00:00 UTC
+            Challenges reset daily at midnight London time
           </div>
         </div>
       </div>
