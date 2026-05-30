@@ -44,7 +44,9 @@ export type GameEventType =
   | 'tournament_score_update'
   | 'set_completed'
   | 'set_item_added'
-  | 'item_scrapped';
+  | 'item_scrapped'
+  | 'hero_upgrade'
+  | 'skill_upgrade';
 
 export interface GameEvent<T = unknown> {
   type: GameEventType;
@@ -199,6 +201,10 @@ export interface GameState {
   setItems: HardwareItem[];
   collectedSets: Record<string, boolean>;
   scrap: number;
+  // Hero upgrades (tap power, crit chance, crit damage)
+  heroUpgrades: Record<string, number>;
+  // Skill level upgrades
+  skillUpgrades: Record<SkillId, number>;
   lastSaveTime: number;
   lastTickTime: number;
   schemaVersion: number;

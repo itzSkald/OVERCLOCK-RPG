@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CircuitBoard, Zap, ChevronDown, Trophy, Clock, Award, ShoppingBag, Swords, Users, Trash2 } from 'lucide-react';
+import { CircuitBoard, Zap, ChevronDown, Trophy, Clock, Award, ShoppingBag, Swords, Users, Trash2, ArrowUp } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import type { Player } from '../../engine/types';
 import { CyberHUD } from './CyberHUD';
@@ -16,6 +16,7 @@ import { ShopScreen } from './ShopScreen';
 import { TournamentScreen } from './TournamentScreen';
 import { ClanScreen } from './ClanScreen';
 import { ScrapScreen } from './ScrapScreen';
+import { UpgradeScreen } from './UpgradeScreen';
 import { useGameState } from '../../hooks/useGameState';
 import { Tooltip, TooltipLabel, TooltipText } from './Tooltip';
 import type { OverclockPlugin } from '../../plugins/OverclockPlugin';
@@ -137,6 +138,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
   const [showTournament, setShowTournament] = useState(false);
   const [showClan, setShowClan] = useState(false);
   const [showScrap, setShowScrap] = useState(false);
+  const [showUpgrades, setShowUpgrades] = useState(false);
   const [mobileDrawer, setMobileDrawer] = useState<MobileDrawer>(null);
 
   const inventoryCount = useGameState(engine, s => (s.inventory ?? []).length);
@@ -172,6 +174,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
       {showTournament && <TournamentScreen engine={engine} onClose={() => setShowTournament(false)} />}
       {showClan && <ClanScreen engine={engine} onClose={() => setShowClan(false)} />}
       {showScrap && <ScrapScreen engine={engine} onClose={() => setShowScrap(false)} />}
+      {showUpgrades && <UpgradeScreen engine={engine} onClose={() => setShowUpgrades(false)} />}
       <AchievementToast engine={engine} />
     </>
   );
@@ -213,6 +216,12 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
             activeColor="#00f5ff"
             badge={inventoryCount > 0 ? inventoryCount : null}
             onClick={() => openDrawer('components')}
+          />
+          <MobileTab
+            icon={<ArrowUp size={15} color="#3a4a5a" />}
+            label="UPGRADES"
+            activeColor="#00f5ff"
+            onClick={() => setShowUpgrades(true)}
           />
           <MobileTab
             icon={<Zap size={15} color={mobileDrawer === 'overclock' ? '#ff0080' : '#3a4a5a'} />}
@@ -361,6 +370,25 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
                   {inventoryCount} IN STORAGE
                 </div>
               )}
+            </button>
+          </Tooltip>
+
+          {/* Upgrades / Hero */}
+          <Tooltip content={<><TooltipLabel label="UPGRADES" color="#00f5ff" /><TooltipText>Level up tap damage, crit, and skill power.</TooltipText></>} position="left">
+            <button
+              onClick={() => setShowUpgrades(true)}
+              style={{
+                width: '100%', background: '#080818',
+                border: '1px solid #0a2838',
+                color: '#2a5a6a', padding: '12px 10px',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.25)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a5a6a'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <ArrowUp size={20} />
+              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>UPGRADES</div>
             </button>
           </Tooltip>
 

@@ -13,6 +13,9 @@ const DEFAULT_SKILL_COOLDOWNS: Record<SkillId, SkillCooldownState> = {
 export const DEFAULT_STATE: GameState = {
   stage: 1,
   highestStage: 1,
+  maxStage: 999999,
+  tournamentMaxStage: 0,
+  tournamentSessionId: null,
   enemy: null,
   gold: 0,
   overclockCount: 0,
@@ -33,10 +36,15 @@ export const DEFAULT_STATE: GameState = {
   pendingBossReturn: false,
   pendingBossStage: null,
   diamonds: 0,
+  skillPoints: 0,
+  claimedSkillPointMilestones: [],
   setItems: [],
   collectedSets: {},
-  lastSaveTime: Date.now(),
-  lastTickTime: Date.now(),
+  scrap: 0,
+  heroUpgrades: {},
+  skillUpgrades: {} as Record<SkillId, number>,
+  lastSaveTime: 0, // Will be set on actual save, not on startup
+  lastTickTime: 0, // Will be set on first engine tick
   schemaVersion: 1,
 };
 

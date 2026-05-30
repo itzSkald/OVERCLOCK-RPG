@@ -135,7 +135,11 @@ export class GameEngine implements IEngine {
   }
 
   private startTick(): void {
-    this.lastTickTime = Date.now();
+    // Initialize lastTickTime on first tick (needed for offline gold calculations)
+    const now = Date.now();
+    this.lastTickTime = now;
+    this.stateManager.update({ lastTickTime: now });
+    
     this.tickInterval = setInterval(() => {
       const now = Date.now();
       const delta = (now - this.lastTickTime) / 1000;
