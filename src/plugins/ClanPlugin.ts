@@ -6,12 +6,9 @@ export interface Clan {
   name: string;
   tag: string;
   description: string;
-  leader_id: string;
-  color: string;
-  banner_index?: number; // Optional - may not exist in older schemas
+  owner_id: string;
   member_count: number;
   total_stage: number;
-  total_overclocks: number;
   created_at: string;
 }
 
@@ -22,8 +19,6 @@ export interface ClanMember {
   handle: string;
   role: 'leader' | 'officer' | 'member';
   highest_stage: number;
-  max_stage: number;
-  overclock_count: number;
   joined_at: string;
 }
 
@@ -36,17 +31,6 @@ export interface ClanInvite {
   created_at: string;
   clan?: Clan;
 }
-
-export const CLAN_COLORS = [
-  '#00f5ff', // cyan
-  '#ff0080', // pink
-  '#39ff14', // green
-  '#ffaa00', // amber
-  '#ff4444', // red
-  '#aa44ff', // purple
-  '#44aaff', // blue
-  '#ff8844', // orange
-] as const;
 
 export class ClanPlugin implements IPlugin {
   id = 'clan';
@@ -123,7 +107,7 @@ export class ClanPlugin implements IPlugin {
     const { data: membership } = await this.engine.storage.load<ClanMember>(
       'clan_members',
       { user_id: this.userId },
-      'id, clan_id, user_id, handle, role, highest_stage, max_stage, overclock_count, joined_at'
+      'id, clan_id, user_id, handle, role, highest_stage, joined_at'
     );
 
     if (!membership) {
@@ -138,7 +122,7 @@ export class ClanPlugin implements IPlugin {
     const { data: clan } = await this.engine.storage.load<Clan>(
       'clans',
       { id: membership.clan_id },
-      'id, name, tag, description, leader_id, color, member_count, total_stage, total_overclocks, created_at'
+      'id, name, tag, description, owner_id, member_count, total_stage, created_at'
     );
 
     this.myClan = clan;
@@ -152,13 +136,13 @@ export class ClanPlugin implements IPlugin {
     const { data } = await this.engine.storage.loadMany<ClanMember>(
       'clan_members',
       { clan_id: clanId },
-      'id, clan_id, user_id, handle, role, highest_stage, max_stage, overclock_count, joined_at'
+      'id, clan_id, user_id, handle, role, highest_stage, joined_at'
     );
     this.clanMembers = data.sort((a, b) => {
       const roleOrder = { leader: 0, officer: 1, member: 2 };
       const roleDiff = roleOrder[a.role] - roleOrder[b.role];
       if (roleDiff !== 0) return roleDiff;
-      return b.max_stage - a.max_stage;
+      return b.highest_stage - a.highest_stage;
     });
   }
 
@@ -166,7 +150,7 @@ export class ClanPlugin implements IPlugin {
     const { data } = await this.engine.storage.loadMany<Clan>(
       'clans',
       {},
-      'id, name, tag, description, leader_id, color, member_count, total_stage, total_overclocks, created_at'
+      'id, name, tag, description, owner_id, member_count, total_stage, created_at'
     );
     this.allClans = data.sort((a, b) => b.total_stage - a.total_stage);
   }
@@ -193,10 +177,8 @@ export class ClanPlugin implements IPlugin {
     if (!this.myMembership || !this.userId) return;
 
     const newStage = this.engine.state.highestStage;
-    const newMaxStage = this.engine.state.maxStage ?? 1;
-    const newOC = this.engine.state.totalOverclocks;
 
-    if (newStage <= this.myMembership.highest_stage && newMaxStage <= this.myMembership.max_stage && newOC <= this.myMembership.overclock_count) {
+    if (newStage <= this.myMembership.highest_stage) {
       return;
     }
 
@@ -205,8 +187,6 @@ export class ClanPlugin implements IPlugin {
       {
         id: this.myMembership.id,
         highest_stage: Math.max(newStage, this.myMembership.highest_stage),
-        max_stage: Math.max(newMaxStage, this.myMembership.max_stage),
-        overclock_count: Math.max(newOC, this.myMembership.overclock_count),
       },
       'id'
     );
@@ -224,11 +204,10 @@ export class ClanPlugin implements IPlugin {
     const { data: members } = await this.engine.storage.loadMany<ClanMember>(
       'clan_members',
       { clan_id: clanId },
-      'highest_stage, overclock_count'
+      'highest_stage'
     );
 
     const totalStage = members.reduce((sum, m) => sum + m.highest_stage, 0);
-    const totalOC = members.reduce((sum, m) => sum + m.overclock_count, 0);
 
     await this.engine.storage.save(
       'clans',
@@ -236,14 +215,13 @@ export class ClanPlugin implements IPlugin {
         id: clanId,
         member_count: members.length,
         total_stage: totalStage,
-        total_overclocks: totalOC,
       },
       'id'
     );
   }
 
   // Public API
-  async createClan(name: string, tag: string, description: string, color: string): Promise<{ success: boolean; error?: string }> {
+  async createClan(name: string, tag: string, description: string): Promise<{ success: boolean; error?: string }> {
     if (!this.userId) return { success: false, error: 'Not logged in' };
     if (this.myClan) return { success: false, error: 'Already in a clan' };
 
@@ -266,13 +244,11 @@ export class ClanPlugin implements IPlugin {
         name: trimmedName,
         tag: trimmedTag,
         description: description.trim().slice(0, 200),
-        leader_id: this.userId,
-        color,
+        owner_id: this.userId,
         member_count: 1,
         total_stage: this.engine.state.highestStage,
-        total_overclocks: this.engine.state.totalOverclocks,
       },
-      'id, name, tag, description, leader_id, color, member_count, total_stage, total_overclocks, created_at'
+      'id, name, tag, description, owner_id, member_count, total_stage, created_at'
     );
 
     if (clanError || !clan) {
@@ -290,7 +266,6 @@ export class ClanPlugin implements IPlugin {
         handle: this.handle,
         role: 'leader',
         highest_stage: this.engine.state.highestStage,
-        overclock_count: this.engine.state.totalOverclocks,
       }
     );
 
@@ -318,7 +293,6 @@ export class ClanPlugin implements IPlugin {
         handle: this.handle,
         role: 'member',
         highest_stage: this.engine.state.highestStage,
-        overclock_count: this.engine.state.totalOverclocks,
       }
     );
 
@@ -419,7 +393,7 @@ export class ClanPlugin implements IPlugin {
     await this.engine.storage.save('clan_members', { id: memberId, role: 'leader' }, 'id');
     
     if (this.myClan) {
-      await this.engine.storage.save('clans', { id: this.myClan.id, leader_id: member.user_id }, 'id');
+      await this.engine.storage.save('clans', { id: this.myClan.id, owner_id: member.user_id }, 'id');
     }
 
     await this.loadMyClan();

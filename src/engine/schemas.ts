@@ -201,22 +201,20 @@ const clansSchema: TableSchema = {
     { name: 'name', type: 'text', nullable: false, unique: true },
     { name: 'tag', type: 'text', nullable: false, unique: true },
     { name: 'description', type: 'text', nullable: true },
-    { name: 'leader_id', type: 'uuid', nullable: false },
-    { name: 'color', type: 'text', nullable: false, default: "'#00f5ff'" },
+    { name: 'owner_id', type: 'uuid', nullable: false },
     { name: 'member_count', type: 'integer', nullable: false, default: '1' },
     { name: 'total_stage', type: 'bigint', nullable: false, default: '0' },
-    { name: 'total_overclocks', type: 'bigint', nullable: false, default: '0' },
     { name: 'created_at', type: 'timestamptz', nullable: false, default: 'now()' },
   ],
   indexes: [
-    { name: 'idx_clans_leader_id', columns: ['leader_id'] },
+    { name: 'idx_clans_owner_id', columns: ['owner_id'] },
     { name: 'idx_clans_total_stage', columns: ['total_stage'] },
   ],
   rls: [
     { name: 'clans_select_all', operation: 'SELECT', using: 'true' },
-    { name: 'clans_insert_auth', operation: 'INSERT', withCheck: 'auth.uid() = leader_id' },
-    { name: 'clans_update_leader', operation: 'UPDATE', using: 'auth.uid() = leader_id' },
-    { name: 'clans_delete_leader', operation: 'DELETE', using: 'auth.uid() = leader_id' },
+    { name: 'clans_insert_auth', operation: 'INSERT', withCheck: 'auth.uid() = owner_id' },
+    { name: 'clans_update_owner', operation: 'UPDATE', using: 'auth.uid() = owner_id' },
+    { name: 'clans_delete_owner', operation: 'DELETE', using: 'auth.uid() = owner_id' },
   ],
 };
 
@@ -229,8 +227,6 @@ const clanMembersSchema: TableSchema = {
     { name: 'handle', type: 'text', nullable: false },
     { name: 'role', type: 'text', nullable: false, default: "'member'", check: "role IN ('leader', 'officer', 'member')" },
     { name: 'highest_stage', type: 'integer', nullable: false, default: '1' },
-    { name: 'max_stage', type: 'integer', nullable: false, default: '1' },
-    { name: 'overclock_count', type: 'integer', nullable: false, default: '0' },
     { name: 'joined_at', type: 'timestamptz', nullable: false, default: 'now()' },
   ],
   indexes: [

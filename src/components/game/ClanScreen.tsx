@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { X, Users, Crown, Shield, UserMinus, UserPlus, ChevronRight, ChevronLeft, Settings, LogOut, RefreshCw, Check, XIcon } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import { useGameState } from '../../hooks/useGameState';
-import type { ClanPlugin, Clan, ClanMember, ClanInvite, CLAN_COLORS } from '../../plugins/ClanPlugin';
+import type { ClanPlugin, Clan, ClanMember, ClanInvite } from '../../plugins/ClanPlugin';
 
 interface ClanScreenProps {
   engine: GameEngine;
@@ -19,6 +19,13 @@ const COLORS = [
   '#44aaff',
   '#ff8844',
 ] as const;
+
+/** Derive a consistent color from clan ID (since color column was removed from DB) */
+function getClanColor(clan: Clan): string {
+  // Use first chars of ID to generate a consistent index
+  const hash = clan.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return COLORS[hash % COLORS.length];
+}
 
 function getRoleIcon(role: ClanMember['role'], color: string) {
   if (role === 'leader') return <Crown size={10} color="#ffd700" />;
@@ -37,13 +44,12 @@ function CreateClanForm({
   onSubmit,
   onCancel,
 }: {
-  onSubmit: (name: string, tag: string, description: string, color: string) => Promise<void>;
+  onSubmit: (name: string, tag: string, description: string) => Promise<void>;
   onCancel: () => void;
 }) {
   const [name, setName] = useState('');
   const [tag, setTag] = useState('');
   const [description, setDescription] = useState('');
-  const [color, setColor] = useState(COLORS[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +57,7 @@ function CreateClanForm({
     setLoading(true);
     setError(null);
     try {
-      await onSubmit(name, tag, description, color);
+      await onSubmit(name, tag, description);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create clan');
     }
@@ -116,27 +122,6 @@ function CreateClanForm({
         />
       </div>
 
-      <div style={{ marginBottom: 14 }}>
-        <label style={{ color: '#5a6a7a', fontFamily: 'var(--font-mono)', fontSize: '8px', display: 'block', marginBottom: 6 }}>
-          CLAN COLOR
-        </label>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {COLORS.map(c => (
-            <button
-              key={c}
-              onClick={() => setColor(c)}
-              style={{
-                width: 24, height: 24, background: c,
-                border: color === c ? '2px solid #fff' : '2px solid transparent',
-                cursor: 'pointer', transition: 'transform 0.1s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-            />
-          ))}
-        </div>
-      </div>
-
       {error && (
         <div style={{ color: '#ff4444', fontFamily: 'var(--font-mono)', fontSize: '9px', marginBottom: 10 }}>
           {error}
@@ -188,16 +173,16 @@ function ClanCard({
         display: 'flex', alignItems: 'center', gap: 10,
         transition: 'border-color 0.15s, background 0.15s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = clan.color + '66'; e.currentTarget.style.background = '#0c0c18'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = getClanColor(clan) + '66'; e.currentTarget.style.background = '#0c0c18'; }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a2a3a'; e.currentTarget.style.background = '#080810'; }}
     >
       <div style={{
-        width: 32, height: 32, background: clan.color + '22',
-        border: `1px solid ${clan.color}44`,
+        width: 32, height: 32, background: getClanColor(clan) + '22',
+        border: `1px solid ${getClanColor(clan)}44`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
       }}>
-        <span className="font-pixel" style={{ color: clan.color, fontSize: '8px' }}>{clan.tag}</span>
+        <span className="font-pixel" style={{ color: getClanColor(clan), fontSize: '8px' }}>{clan.tag}</span>
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -345,12 +330,12 @@ function InviteCard({
       display: 'flex', alignItems: 'center', gap: 10,
     }}>
       <div style={{
-        width: 28, height: 28, background: clan.color + '22',
-        border: `1px solid ${clan.color}44`,
+        width: 28, height: 28, background: getClanColor(clan) + '22',
+        border: `1px solid ${getClanColor(clan)}44`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
       }}>
-        <span className="font-pixel" style={{ color: clan.color, fontSize: '7px' }}>{clan.tag}</span>
+        <span className="font-pixel" style={{ color: getClanColor(clan), fontSize: '7px' }}>{clan.tag}</span>
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -432,12 +417,12 @@ function MyClanView({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 40, height: 40, background: clan.color + '22',
-            border: `1px solid ${clan.color}44`,
+            width: 40, height: 40, background: getClanColor(clan) + '22',
+            border: `1px solid ${getClanColor(clan)}44`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
-            <span className="font-pixel" style={{ color: clan.color, fontSize: '10px' }}>{clan.tag}</span>
+            <span className="font-pixel" style={{ color: getClanColor(clan), fontSize: '10px' }}>{clan.tag}</span>
           </div>
           <div style={{ flex: 1 }}>
             <div className="font-pixel" style={{ color: '#e0e8f0', fontSize: '9px', marginBottom: 2 }}>
@@ -460,7 +445,7 @@ function MyClanView({
         {[
           { label: 'Total Stages', value: clan.total_stage, color: '#ffaa00' },
           { label: 'Total OC', value: clan.total_overclocks, color: '#ff0080' },
-          { label: 'Your Role', value: getRoleLabel(membership.role), color: clan.color },
+          { label: 'Your Role', value: getRoleLabel(membership.role), color: getClanColor(clan) },
         ].map(stat => (
           <div key={stat.label} style={{ flex: 1, background: '#06060e', border: '1px solid #1a1a2a', padding: '6px 8px' }}>
             <div style={{ color: '#3a4a5a', fontFamily: 'var(--font-mono)', fontSize: '7px', marginBottom: 2 }}>{stat.label}</div>
@@ -489,7 +474,7 @@ function MyClanView({
             isMe={member.user_id === membership.user_id}
             canManage={canManage}
             isLeader={isLeader}
-            clanColor={clan.color}
+            clanColor={getClanColor(clan)}
             onPromote={() => plugin.promoteMember(member.id)}
             onDemote={() => plugin.demoteMember(member.id)}
             onKick={() => plugin.kickMember(member.id)}
@@ -566,7 +551,7 @@ function ClanDetailView({
           <div className="font-pixel" style={{ color: '#e0e8f0', fontSize: '9px' }}>
             {clan.name}
           </div>
-          <div style={{ color: clan.color, fontFamily: 'var(--font-mono)', fontSize: '8px' }}>
+          <div style={{ color: getClanColor(clan), fontFamily: 'var(--font-mono)', fontSize: '8px' }}>
             [{clan.tag}]
           </div>
         </div>
@@ -575,12 +560,12 @@ function ClanDetailView({
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px' }}>
         {/* Clan Info */}
         <div style={{
-          width: 60, height: 60, background: clan.color + '22',
-          border: `1px solid ${clan.color}44`,
+          width: 60, height: 60, background: getClanColor(clan) + '22',
+          border: `1px solid ${getClanColor(clan)}44`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 14px',
         }}>
-          <span className="font-pixel" style={{ color: clan.color, fontSize: '14px' }}>{clan.tag}</span>
+          <span className="font-pixel" style={{ color: getClanColor(clan), fontSize: '14px' }}>{clan.tag}</span>
         </div>
 
         {clan.description && (
@@ -617,10 +602,10 @@ function ClanDetailView({
           disabled={joining}
           className="font-pixel w-full"
           style={{
-            background: '#001510', border: `1px solid ${clan.color}66`,
-            color: clan.color, padding: '12px', fontSize: '9px', letterSpacing: '2px',
+            background: '#001510', border: `1px solid ${getClanColor(clan)}66`,
+            color: getClanColor(clan), padding: '12px', fontSize: '9px', letterSpacing: '2px',
             cursor: joining ? 'wait' : 'pointer',
-            boxShadow: `0 0 10px ${clan.color}22`,
+            boxShadow: `0 0 10px ${getClanColor(clan)}22`,
           }}
         >
           {joining ? 'JOINING...' : 'JOIN CLAN'}
@@ -649,8 +634,8 @@ export const ClanScreen: React.FC<ClanScreenProps> = ({ engine, onClose }) => {
 
   const selectedClan = selectedClanId ? allClans.find(c => c.id === selectedClanId) : null;
 
-  const handleCreateClan = async (name: string, tag: string, description: string, color: string) => {
-    const result = await plugin?.createClan(name, tag, description, color);
+  const handleCreateClan = async (name: string, tag: string, description: string) => {
+    const result = await plugin?.createClan(name, tag, description);
     if (result?.success) {
       setView('main');
     } else {
