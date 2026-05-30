@@ -170,8 +170,8 @@ export class DailyPlugin implements IPlugin {
           c.completed = true;
           const diamonds = getDiamondReward(c.challenge_type, this.engine.state.highestStage);
           this.engine.emit('daily_completed', { challenge: c });
+          // Daily ops reward diamonds only - no gold
           this.engine.updateState({
-            gold: this.engine.state.gold + c.reward_gold,
             diamonds: this.engine.state.diamonds + diamonds,
           });
           this.engine.emit('diamonds_earned', { amount: diamonds, source: 'daily' });
@@ -192,8 +192,8 @@ export class DailyPlugin implements IPlugin {
           c.completed = true;
           const diamonds = getDiamondReward(c.challenge_type, this.engine.state.highestStage);
           this.engine.emit('daily_completed', { challenge: c });
+          // Daily ops reward diamonds only - no gold
           this.engine.updateState({
-            gold: this.engine.state.gold + c.reward_gold,
             diamonds: this.engine.state.diamonds + diamonds,
           });
           this.engine.emit('diamonds_earned', { amount: diamonds, source: 'daily' });

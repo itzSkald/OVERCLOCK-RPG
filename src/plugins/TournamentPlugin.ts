@@ -8,6 +8,7 @@ export interface Tournament {
   bracket_number: number;
   starts_at: string;
   ends_at: string;
+  join_closes_at: string | null;
   prize_diamonds: number;
   entry_fee_diamonds: number;
   player_cap: number;
@@ -77,7 +78,7 @@ export class TournamentPlugin implements IPlugin {
     const { data } = await this.engine.storage.loadMany<Tournament>(
       'tournaments',
       {},
-      'id, name, template_name, bracket_number, starts_at, ends_at, prize_diamonds, entry_fee_diamonds, player_cap, status'
+      'id, name, template_name, bracket_number, starts_at, ends_at, join_closes_at, prize_diamonds, entry_fee_diamonds, player_cap, status'
     );
     // Filter client-side: exclude ended, sort by starts_at
     this.tournaments = data
@@ -123,9 +124,15 @@ export class TournamentPlugin implements IPlugin {
     if (!t) return { success: false, error: 'Tournament not found' };
     if (t.status === 'ended') return { success: false, error: 'Tournament has ended' };
 
+    // Check if join window has closed
+    if (t.join_closes_at && new Date() > new Date(t.join_closes_at)) {
+      return { success: false, error: 'Join window has closed' };
+    }
+
     const participantCount = this.participantCounts[tournamentId] ?? 0;
     if (participantCount >= t.player_cap) return { success: false, error: 'Bracket is full' };
 
+    // Entry fee check (if any - should be 0 for free tournaments)
     if (t.entry_fee_diamonds > 0) {
       if (this.engine.state.diamonds < t.entry_fee_diamonds) {
         return { success: false, error: `Need ${t.entry_fee_diamonds} ◈ to enter` };
@@ -195,6 +202,26 @@ export class TournamentPlugin implements IPlugin {
   getLeaderboard(tournamentId: string): TournamentEntry[] { return this.leaderboards[tournamentId] ?? []; }
   getParticipantCount(tournamentId: string): number { return this.participantCounts[tournamentId] ?? 0; }
   isJoined(tournamentId: string): boolean { return !!this.myEntries[tournamentId]; }
+  
+  canJoin(tournamentId: string): { canJoin: boolean; reason?: string } {
+    const t = this.tournaments.find(x => x.id === tournamentId);
+    if (!t) return { canJoin: false, reason: 'Tournament not found' };
+    if (t.status === 'ended') return { canJoin: false, reason: 'Tournament has ended' };
+    if (this.myEntries[tournamentId]) return { canJoin: false, reason: 'Already joined' };
+    if (t.join_closes_at && new Date() > new Date(t.join_closes_at)) {
+      return { canJoin: false, reason: 'Join window closed' };
+    }
+    const participantCount = this.participantCounts[tournamentId] ?? 0;
+    if (participantCount >= t.player_cap) return { canJoin: false, reason: 'Bracket full' };
+    return { canJoin: true };
+  }
+  
+  getJoinWindowRemaining(tournamentId: string): number | null {
+    const t = this.tournaments.find(x => x.id === tournamentId);
+    if (!t || !t.join_closes_at) return null;
+    const remaining = new Date(t.join_closes_at).getTime() - Date.now();
+    return remaining > 0 ? remaining : 0;
+  }
 
   subscribe(listener: () => void): () => void {
     this.listeners.push(listener);
