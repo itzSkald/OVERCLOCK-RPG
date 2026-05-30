@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { X, Award, Lock } from 'lucide-react';
 import type { GameEngine } from '../../engine/Engine';
 import type { AchievementPlugin } from '../../plugins/AchievementPlugin';
-import { ACHIEVEMENT_DEFS } from '../../plugins/AchievementPlugin';
+import { ACHIEVEMENT_CONFIG } from '../../config/game.config';
 
 interface AchievementsScreenProps {
   engine: GameEngine;
@@ -23,7 +23,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ engine, 
     return plugin.subscribe(refresh);
   }, [plugin, refresh]);
 
-  const progress = plugin?.getProgress() ?? { total: ACHIEVEMENT_DEFS.length, unlocked: 0 };
+  const progress = plugin?.getProgress() ?? { total: ACHIEVEMENT_CONFIG.achievements.length, unlocked: 0 };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -70,7 +70,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({ engine, 
 
         {/* Achievement grid */}
         <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {ACHIEVEMENT_DEFS.map(def => {
+          {ACHIEVEMENT_CONFIG.achievements.map(def => {
             const isUnlocked = unlocked.has(def.id);
             return (
               <div

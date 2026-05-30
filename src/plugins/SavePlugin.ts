@@ -1,5 +1,7 @@
 import type { IPlugin, IEngine, GameState, GameEventType } from '../engine/types';
 import { SAVE_CONFIG } from '../config/game.config';
+import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * SavePlugin - Manages game state persistence with configurable triggers.
@@ -8,7 +10,8 @@ import { SAVE_CONFIG } from '../config/game.config';
  * - Periodic auto-save at configurable intervals
  * - Action-based saving on important game events (configurable)
  * - Debouncing to prevent rapid-fire saves
- * - Save on tab hide / beforeunload for data safety
+ * - Save on tab hide / beforeunload for data safety (web)
+ * - Save on app pause/background for data safety (mobile via Capacitor)
  * - Manual save via saveNow() method
  * 
  * Configuration (in SAVE_CONFIG):
@@ -31,6 +34,7 @@ export class SavePlugin implements IPlugin {
   private boundBeforeUnload!: () => void;
   private boundVisibilityChange!: () => void;
   private actionUnsubscribers: Array<() => void> = [];
+  private capacitorAppStateListener: (() => void) | null = null;
 
   async init(engine: IEngine): Promise<void> {
     this.engine = engine;
@@ -48,6 +52,37 @@ export class SavePlugin implements IPlugin {
       this.unsubscribeFromActions();
     });
 
+    // Set up platform-specific lifecycle listeners
+    if (Capacitor.isNativePlatform()) {
+      // Mobile: Use Capacitor App plugin for lifecycle events
+      this.setupCapacitorListeners();
+    } else {
+      // Web: Use browser events
+      this.setupWebListeners();
+    }
+  }
+
+  /**
+   * Set up Capacitor app lifecycle listeners for mobile platforms.
+   */
+  private async setupCapacitorListeners(): Promise<void> {
+    // Save when app goes to background (pause)
+    const listener = await App.addListener('appStateChange', (state) => {
+      if (!state.isActive && this.isAuthenticated) {
+        // App is going to background - save immediately
+        this.saveImmediate();
+      }
+    });
+    
+    this.capacitorAppStateListener = () => {
+      listener.remove();
+    };
+  }
+
+  /**
+   * Set up web browser lifecycle listeners.
+   */
+  private setupWebListeners(): void {
     // Save on page unload
     this.boundBeforeUnload = () => {
       if (this.isAuthenticated) {
@@ -195,7 +230,15 @@ export class SavePlugin implements IPlugin {
       this.debounceTimer = null;
     }
 
-    window.removeEventListener('beforeunload', this.boundBeforeUnload);
-    document.removeEventListener('visibilitychange', this.boundVisibilityChange);
+    // Clean up platform-specific listeners
+    if (Capacitor.isNativePlatform()) {
+      if (this.capacitorAppStateListener) {
+        this.capacitorAppStateListener();
+        this.capacitorAppStateListener = null;
+      }
+    } else {
+      window.removeEventListener('beforeunload', this.boundBeforeUnload);
+      document.removeEventListener('visibilitychange', this.boundVisibilityChange);
+    }
   }
 }

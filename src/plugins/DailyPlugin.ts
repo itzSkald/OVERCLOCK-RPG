@@ -215,6 +215,7 @@ export class DailyPlugin implements IPlugin {
     }
 
     const today = getLondonDateString();
+    console.log('[v0] DailyPlugin: Loading challenges for', today);
     
     // Try to load from DB first
     const { data, error } = await this.engine.storage.loadMany('daily_challenges', {
@@ -229,15 +230,28 @@ export class DailyPlugin implements IPlugin {
       return;
     }
 
+    console.log('[v0] DailyPlugin: Loaded', data?.length ?? 0, 'challenges from DB');
+
     if (data && data.length >= DAILY_CONFIG.challengesPerDay) {
       this.challenges = data as DailyChallenge[];
+      console.log('[v0] DailyPlugin: Using DB challenges');
     } else if (data && data.length > 0) {
-      // Has some but not enough - use what we have plus generate more locally
+      // Has some but not enough - use what we have
       this.challenges = data as DailyChallenge[];
+      console.log('[v0] DailyPlugin: Using partial DB challenges');
     } else {
       // No data - try to insert to DB, fall back to local
+      console.log('[v0] DailyPlugin: No DB data, generating challenges');
       await this.generateChallenges(today);
     }
+    
+    // Final fallback: if still no challenges, generate locally
+    if (this.challenges.length === 0) {
+      console.log('[v0] DailyPlugin: No challenges after generation, forcing local');
+      this.generateLocalChallenges(today);
+    }
+    
+    console.log('[v0] DailyPlugin: Final challenge count:', this.challenges.length);
     this.notify();
   }
 

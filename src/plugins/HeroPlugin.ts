@@ -25,7 +25,14 @@ export class HeroPlugin implements IPlugin {
 
   async init(engine: IEngine): Promise<void> {
     this.engine = engine;
+    
+    // Apply modifiers on init (for any already-loaded state)
     this.applyAllModifiers();
+    
+    // Re-apply modifiers when state is restored from save
+    engine.on('state_sync', () => {
+      this.applyAllModifiers();
+    });
   }
 
   /**

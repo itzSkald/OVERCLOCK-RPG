@@ -92,56 +92,28 @@ export class TournamentPlugin implements IPlugin {
 
   /**
    * Generate a set of always-available rotating tournaments based on the
-   * current week. These act as live data until an admin seeds the DB.
+   * config templates. Each tournament cycles based on its durationHours.
    */
   private generateLocalTournaments(): Tournament[] {
     const now = Date.now();
     const hourMs = 60 * 60 * 1000;
-    const dayMs = 24 * hourMs;
-    const weekMs = 7 * dayMs;
 
-    // Weekly tournament — resets every Monday 00:00 UTC
-    const dayOfWeek = new Date().getUTCDay(); // 0=Sun
-    const msIntoWeek = ((dayOfWeek === 0 ? 6 : dayOfWeek - 1) * dayMs) + (Date.now() % dayMs);
-    const weekStart = now - msIntoWeek;
-    const weekEnd = weekStart + weekMs;
-
-    // 3-day sprint — resets every 3 days
-    const epochDays = Math.floor(now / dayMs);
-    const sprintCycle = Math.floor(epochDays / 3);
-    const sprintStart = sprintCycle * 3 * dayMs;
-    const sprintEnd = sprintStart + 3 * dayMs;
-
-    // Daily blitz — resets every 24h at midnight UTC
-    const dayStart = Math.floor(now / dayMs) * dayMs;
-    const dayEnd = dayStart + dayMs;
-
-    // Build tournaments from config templates
     const templates = TOURNAMENT_CONFIG.localTemplates;
     const results: Tournament[] = [];
 
-    for (const template of templates) {
-      let starts: number, ends: number, joinCloses: number | null;
+    for (let i = 0; i < templates.length; i++) {
+      const template = templates[i];
+      const durationMs = template.durationHours * hourMs;
       
-      switch (template.templateName) {
-        case 'weekly':
-          starts = weekStart;
-          ends = weekEnd;
-          joinCloses = weekStart + (template.joinWindowHours * hourMs);
-          break;
-        case 'sprint':
-          starts = sprintStart;
-          ends = sprintEnd;
-          joinCloses = sprintStart + (template.joinWindowHours * hourMs);
-          break;
-        case 'daily':
-          starts = dayStart;
-          ends = dayEnd;
-          joinCloses = dayStart + (template.joinWindowHours * hourMs);
-          break;
-        default:
-          continue;
-      }
+      // Stagger tournaments by offsetting each by a fraction of the duration
+      // so they don't all start/end at the same time
+      const offsetMs = (i * durationMs) / templates.length;
+      
+      // Calculate the current cycle start based on duration
+      const cycleNumber = Math.floor((now - offsetMs) / durationMs);
+      const starts = (cycleNumber * durationMs) + offsetMs;
+      const ends = starts + durationMs;
+      const joinCloses = starts + (template.joinWindowHours * hourMs);
 
       const status: Tournament['status'] =
         now >= starts && now < ends ? 'active' :
@@ -149,13 +121,13 @@ export class TournamentPlugin implements IPlugin {
 
       if (status !== 'ended') {
         results.push({
-          id: `local-${template.id}-1`,
+          id: `local-${template.id}-${cycleNumber}`,
           name: template.name,
           template_name: template.templateName,
-          bracket_number: 1,
+          bracket_number: cycleNumber % 100,
           starts_at: new Date(starts).toISOString(),
           ends_at: new Date(ends).toISOString(),
-          join_closes_at: joinCloses ? new Date(joinCloses).toISOString() : null,
+          join_closes_at: new Date(joinCloses).toISOString(),
           prize_diamonds: template.prizeDiamonds,
           entry_fee_diamonds: template.entryFeeDiamonds,
           player_cap: template.playerCap,
@@ -163,24 +135,22 @@ export class TournamentPlugin implements IPlugin {
         });
       }
 
-      // Add upcoming next bracket for weekly/sprint
-      if (template.templateName === 'weekly' || template.templateName === 'sprint') {
-        const nextStarts = template.templateName === 'weekly' ? weekEnd : sprintEnd;
-        const nextEnds = template.templateName === 'weekly' ? weekEnd + weekMs : sprintEnd + 3 * dayMs;
-        results.push({
-          id: `local-${template.id}-2`,
-          name: `${template.name} II`,
-          template_name: template.templateName,
-          bracket_number: 2,
-          starts_at: new Date(nextStarts).toISOString(),
-          ends_at: new Date(nextEnds).toISOString(),
-          join_closes_at: null,
-          prize_diamonds: template.prizeDiamonds,
-          entry_fee_diamonds: template.entryFeeDiamonds,
-          player_cap: template.playerCap,
-          status: 'upcoming',
-        });
-      }
+      // Add the next upcoming tournament
+      const nextStarts = starts + durationMs;
+      const nextEnds = nextStarts + durationMs;
+      results.push({
+        id: `local-${template.id}-${cycleNumber + 1}`,
+        name: `${template.name} II`,
+        template_name: template.templateName,
+        bracket_number: (cycleNumber + 1) % 100,
+        starts_at: new Date(nextStarts).toISOString(),
+        ends_at: new Date(nextEnds).toISOString(),
+        join_closes_at: null,
+        prize_diamonds: template.prizeDiamonds,
+        entry_fee_diamonds: template.entryFeeDiamonds,
+        player_cap: template.playerCap,
+        status: 'upcoming',
+      });
     }
 
     return results;

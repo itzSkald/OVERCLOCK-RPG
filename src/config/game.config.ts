@@ -1042,9 +1042,9 @@ export const TOURNAMENT_CONFIG = {
   
   /** Local tournament templates (used when DB has no tournaments) */
   localTemplates: [
-    { id: 'weekly',  name: 'WEEKLY CIRCUIT',  templateName: 'weekly',  durationHours: 168, joinWindowHours: 24, prizeDiamonds: 500, entryFeeDiamonds: 0, playerCap: 128 },
-    { id: 'sprint',  name: '72H SPRINT',      templateName: 'sprint',  durationHours: 72,  joinWindowHours: 6,  prizeDiamonds: 200, entryFeeDiamonds: 0, playerCap: 64  },
-    { id: 'daily',   name: 'DAILY BLITZ',     templateName: 'daily',   durationHours: 24,  joinWindowHours: 2,  prizeDiamonds: 75,  entryFeeDiamonds: 0, playerCap: 32  },
+    { id: 'circuit',  name: '4H CIRCUIT',     templateName: 'circuit',  durationHours: 4, joinWindowHours: 0.5, prizeDiamonds: 500, entryFeeDiamonds: 0, playerCap: 128 },
+    { id: 'sprint',   name: '4H SPRINT',      templateName: 'sprint',   durationHours: 4, joinWindowHours: 0.5, prizeDiamonds: 200, entryFeeDiamonds: 0, playerCap: 64  },
+    { id: 'blitz',    name: '4H BLITZ',       templateName: 'blitz',    durationHours: 4, joinWindowHours: 0.5, prizeDiamonds: 75,  entryFeeDiamonds: 0, playerCap: 32  },
   ] as TournamentTemplateDef[],
 } as const;
 

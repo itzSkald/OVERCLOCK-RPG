@@ -1,16 +1,30 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "overclock-exe",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "cap:init": "cap init OVERCLOCK.EXE com.overclock.exe --web-dir dist",
+    "cap:add:ios": "cap add ios",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android",
+    "build:mobile": "pnpm build && cap sync",
+    "build:ios": "pnpm build && cap sync ios && cap open ios",
+    "build:android": "pnpm build && cap sync android && cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
     "@supabase/supabase-js": "^2.57.4",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
