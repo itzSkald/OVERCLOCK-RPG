@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { TerminalInput } from './TerminalInput';
 import type { AuthPlugin } from '../../plugins/AuthPlugin';
-import { AUTH_CONFIG } from '../../config/game.config';
 
 interface RegisterScreenProps {
   authPlugin: AuthPlugin;
@@ -15,8 +14,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ authPlugin, onSw
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Only shown when AUTH_CONFIG.emailConfirmationEnabled === true
+  const [registered, setRegistered] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
 
   const handleRegister = async () => {
@@ -36,15 +34,58 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ authPlugin, onSw
     if (err) {
       setError(err.toUpperCase());
     } else if (needsConfirmation) {
-      // Only reached when AUTH_CONFIG.emailConfirmationEnabled === true
       setConfirmationSent(true);
+    } else {
+      // Registration succeeded — redirect to login
+      setRegistered(true);
     }
-    // On success without confirmation, auth_success fires → App navigates to game
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleRegister();
   };
+
+  // ── Registration success screen ──────────────────────────────────────────────
+  if (registered) {
+    return (
+      <div className="min-h-screen circuit-bg scanlines flex items-center justify-center animate-crt-flicker">
+        <div className="w-full max-w-md mx-4">
+          <div className="text-center mb-8">
+            <div className="font-pixel glow-cyan mb-2" style={{ color: '#00f5ff', fontSize: '20px', letterSpacing: '4px' }}>
+              OVERCLOCK
+            </div>
+            <div className="font-pixel glow-green" style={{ color: '#39ff14', fontSize: '10px', letterSpacing: '8px' }}>
+              .EXE
+            </div>
+          </div>
+
+          <div className="pixel-border" style={{ background: '#0d0d1a', borderColor: '#1a2a3a', padding: '24px' }}>
+            <div className="font-pixel mb-6" style={{ color: '#39ff14', fontSize: '8px', borderBottom: '1px solid #1a2a3a', paddingBottom: '12px' }}>
+              {'> REGISTRATION COMPLETE'}
+            </div>
+
+            <div className="mb-2 font-pixel" style={{ color: '#5a6a7a', fontSize: '9px', lineHeight: '1.8' }}>
+              {'> USER INITIALIZED'}
+            </div>
+
+            <div className="mb-6" style={{ color: '#3a4a5a', fontFamily: 'var(--font-mono)', fontSize: '11px', lineHeight: '1.6' }}>
+              Account created for{' '}
+              <span style={{ color: '#00f5ff' }}>{email}</span>.{' '}
+              Login to start playing.
+            </div>
+
+            <button
+              onClick={onSwitchToLogin}
+              className="w-full font-pixel pixel-border-cyan"
+              style={{ background: '#001a20', color: '#00f5ff', padding: '14px', fontSize: '9px', letterSpacing: '2px' }}
+            >
+              {'> LOGIN NOW'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── Confirmation screen (only when email confirmation is enabled) ────────────
   if (confirmationSent) {

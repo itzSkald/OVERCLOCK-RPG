@@ -684,7 +684,7 @@ export const ClanScreen: React.FC<ClanScreenProps> = ({ engine, onClose }) => {
           </div>
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
           {/* Already in a clan - show clan view */}
           {myClan && myMembership ? (
             <MyClanView
