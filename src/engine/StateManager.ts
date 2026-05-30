@@ -35,8 +35,8 @@ export const DEFAULT_STATE: GameState = {
   diamonds: 0,
   setItems: [],
   collectedSets: {},
-  lastSaveTime: Date.now(),
-  lastTickTime: Date.now(),
+  lastSaveTime: 0, // Will be set on actual save, not on startup
+  lastTickTime: 0, // Will be set on first engine tick
   schemaVersion: 1,
 };
 
