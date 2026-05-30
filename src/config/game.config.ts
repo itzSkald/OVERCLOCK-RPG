@@ -111,33 +111,59 @@ export const TAP_CONFIG = {
 } as const;
 
 // ── HERO / TAP UPGRADES ──────────────────────────────────────────────────────
+//
+// BALANCE NOTES:
+// - TAP POWER: Main progression curve. Cost grows exponentially (1.15^level).
+//   At level 100: cost ~1.17M gold, +100 tap damage
+//   At level 500: cost ~1.4T gold, +500 tap damage
+//   At level 1000: cost ~3.6e29 gold, +1000 tap damage
+//
+// - CRIT CHANCE: Caps at 60% total (10% base + 50 levels * 1%)
+//   Expensive early, but essential for scaling damage.
+//
+// - CRIT DAMAGE: Caps at 15x total (5x base + 100 levels * 0.1x)
+//   Multiplicative scaling makes this very powerful late game.
+//
+// FORMULA: upgradeCost(level) = baseCost * costMultiplier^level
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface HeroUpgradeDef {
   id: string;
   name: string;
   description: string;
+  /** Base cost at level 0 */
   baseCost: number;
+  /** Cost multiplier per level (exponential growth) */
   costMultiplier: number;
+  /** Maximum achievable level (9999 = effectively unlimited) */
   maxLevel: number;
+  /** Modifier type this upgrade affects */
   modifierType: 'tap_damage' | 'crit_chance' | 'crit_multiplier';
+  /** Value added per level */
   valuePerLevel: number;
+  /** If true, stacks multiplicatively; if false, additively */
   isMultiplier: boolean;
+  /** UI color */
   color: string;
+  /** UI icon */
   icon: string;
 }
 
 export const HERO_CONFIG = {
-  /** Hero level cost formula: baseCost * (costMultiplier ^ level) */
+  /** 
+   * Hero upgrade definitions
+   * Cost formula: baseCost * (costMultiplier ^ currentLevel)
+   */
   upgrades: [
     {
       id: 'hero_tap_power',
       name: 'TAP POWER',
       description: 'Increase base tap damage',
       baseCost: 10,
-      costMultiplier: 1.15,
+      costMultiplier: 1.15,        // ~7x cost every 15 levels
       maxLevel: 9999,
       modifierType: 'tap_damage',
-      valuePerLevel: 1, // +1 tap damage per level (additive before multipliers)
+      valuePerLevel: 1,            // +1 tap damage per level (additive before multipliers)
       isMultiplier: false,
       color: '#00f5ff',
       icon: '👆',
@@ -147,10 +173,10 @@ export const HERO_CONFIG = {
       name: 'CRIT CHANCE',
       description: 'Increase critical hit chance',
       baseCost: 500,
-      costMultiplier: 1.25,
-      maxLevel: 50,
+      costMultiplier: 1.25,        // ~9.3x cost every 10 levels
+      maxLevel: 50,                // Caps at +50% crit chance (60% total)
       modifierType: 'crit_chance',
-      valuePerLevel: 0.01, // +1% crit chance per level
+      valuePerLevel: 0.01,         // +1% crit chance per level
       isMultiplier: false,
       color: '#ff0080',
       icon: '⚡',
@@ -160,65 +186,112 @@ export const HERO_CONFIG = {
       name: 'CRIT DAMAGE',
       description: 'Increase critical damage multiplier',
       baseCost: 1000,
-      costMultiplier: 1.3,
-      maxLevel: 100,
+      costMultiplier: 1.30,        // ~13.8x cost every 10 levels
+      maxLevel: 100,               // Caps at +10x crit damage (15x total)
       modifierType: 'crit_multiplier',
-      valuePerLevel: 0.1, // +10% crit damage per level
+      valuePerLevel: 0.10,         // +10% crit damage per level
       isMultiplier: false,
       color: '#ffaa00',
       icon: '💥',
     },
   ] as HeroUpgradeDef[],
+
+  /** 
+   * Bulk purchase options (buy N levels at once)
+   * UI shows these as quick-buy buttons
+   */
+  bulkPurchaseOptions: [1, 10, 25, 100] as number[],
 } as const;
 
+/** Calculate cost for a specific hero upgrade at a given level */
+export function getHeroUpgradeCost(upgrade: HeroUpgradeDef, level: number): number {
+  return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, level));
+}
+
+/** Calculate total cost to purchase N levels starting from currentLevel */
+export function getHeroUpgradeBulkCost(upgrade: HeroUpgradeDef, currentLevel: number, count: number): number {
+  let total = 0;
+  for (let i = 0; i < count; i++) {
+    total += getHeroUpgradeCost(upgrade, currentLevel + i);
+  }
+  return total;
+}
+
+/** Get total stat bonus from hero upgrade at given level */
+export function getHeroUpgradeValue(upgrade: HeroUpgradeDef, level: number): number {
+  return upgrade.valuePerLevel * level;
+}
+
 // ── SKILL UPGRADES ───────────────────────────────────────────────────────────
+//
+// BALANCE NOTES:
+// - Each skill upgrade increases that skill's effectiveness by 5% per level
+// - Max 50 levels = +250% effectiveness (3.5x power)
+// - Skills have different base costs reflecting their power:
+//   - SURGE (tap buff): cheapest, bread-and-butter skill
+//   - GOLD RUSH: slightly more expensive (gold is valuable)
+//   - CHAIN HACK: mid-tier (auto-tap is passive income)
+//   - FIREWALL: higher cost (boss timer is critical)
+//   - OC PULSE: most expensive (affects both damage and idle)
+//
+// FORMULA: upgradeCost(level) = baseCost * costMultiplier^level
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface SkillUpgradeDef {
+  /** Must match a SkillId from SKILLS_CONFIG */
   skillId: SkillId;
   name: string;
   description: string;
+  /** Base cost at level 0 */
   baseCost: number;
+  /** Cost multiplier per level */
   costMultiplier: number;
+  /** Maximum level */
   maxLevel: number;
-  effectPerLevel: number; // +% effectiveness per level
+  /** Effectiveness increase per level (0.05 = +5%) */
+  effectPerLevel: number;
+  /** UI color */
   color: string;
 }
 
 export const SKILL_UPGRADE_CONFIG = {
-  /** Skill upgrades - increase effectiveness of skills */
+  /** 
+   * Skill upgrade definitions
+   * Each level increases skill effectiveness by effectPerLevel
+   */
   upgrades: [
     {
-      skillId: 'surge',
+      skillId: 'surge' as SkillId,
       name: 'SURGE',
       description: 'Boost tap damage buff duration & power',
       baseCost: 100,
-      costMultiplier: 1.2,
+      costMultiplier: 1.20,        // ~6.2x cost every 10 levels
       maxLevel: 50,
-      effectPerLevel: 0.05, // +5% effectiveness per level
+      effectPerLevel: 0.05,        // +5% effectiveness per level
       color: '#00f5ff',
     },
     {
-      skillId: 'gold_rush',
+      skillId: 'gold_rush' as SkillId,
       name: 'GOLD RUSH',
       description: 'Boost gold bonus duration & power',
       baseCost: 150,
-      costMultiplier: 1.2,
+      costMultiplier: 1.20,
       maxLevel: 50,
       effectPerLevel: 0.05,
       color: '#ffaa00',
     },
     {
-      skillId: 'chain_hack',
+      skillId: 'chain_hack' as SkillId,
       name: 'CHAIN HACK',
       description: 'Boost auto-tap duration & frequency',
       baseCost: 200,
-      costMultiplier: 1.25,
+      costMultiplier: 1.25,        // ~9.3x cost every 10 levels
       maxLevel: 50,
       effectPerLevel: 0.05,
       color: '#39ff14',
     },
     {
-      skillId: 'firewall',
+      skillId: 'firewall' as SkillId,
       name: 'FIREWALL',
       description: 'Boost boss timer freeze duration',
       baseCost: 250,
@@ -228,17 +301,39 @@ export const SKILL_UPGRADE_CONFIG = {
       color: '#ff4444',
     },
     {
-      skillId: 'overclock_pulse',
+      skillId: 'overclock_pulse' as SkillId,
       name: 'OC PULSE',
       description: 'Boost damage & idle multiplier',
       baseCost: 300,
-      costMultiplier: 1.3,
+      costMultiplier: 1.30,        // ~13.8x cost every 10 levels
       maxLevel: 50,
       effectPerLevel: 0.05,
       color: '#ff0080',
     },
   ] as SkillUpgradeDef[],
+
+  /** Bulk purchase options for skill upgrades */
+  bulkPurchaseOptions: [1, 10, 25] as number[],
 } as const;
+
+/** Calculate cost for a specific skill upgrade at a given level */
+export function getSkillUpgradeCost(upgrade: SkillUpgradeDef, level: number): number {
+  return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, level));
+}
+
+/** Calculate total cost to purchase N levels starting from currentLevel */
+export function getSkillUpgradeBulkCost(upgrade: SkillUpgradeDef, currentLevel: number, count: number): number {
+  let total = 0;
+  for (let i = 0; i < count; i++) {
+    total += getSkillUpgradeCost(upgrade, currentLevel + i);
+  }
+  return total;
+}
+
+/** Get skill effectiveness multiplier at given upgrade level (1.0 = base, 2.5 = +150%) */
+export function getSkillEffectivenessMultiplier(upgrade: SkillUpgradeDef, level: number): number {
+  return 1 + (upgrade.effectPerLevel * level);
+}
 
 // ── ENEMY ─────────────────────────────────────────────────────────────────────
 

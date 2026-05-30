@@ -4,6 +4,7 @@ import type { GameEngine } from '../../engine/Engine';
 import type { HeroPlugin } from '../../plugins/HeroPlugin';
 import { useGameState } from '../../hooks/useGameState';
 import { Tooltip, TooltipLabel, TooltipText, TooltipStat } from './Tooltip';
+import { HERO_CONFIG, SKILL_UPGRADE_CONFIG } from '../../config/game.config';
 
 interface UpgradeScreenProps {
   engine: GameEngine;
@@ -11,8 +12,11 @@ interface UpgradeScreenProps {
 }
 
 type TabType = 'hero' | 'skills';
+type BulkAmount = 1 | 10 | 25 | 100 | 'max';
 
 function formatNumber(n: number): string {
+  if (!isFinite(n)) return 'MAX';
+  if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(2)}T`;
   if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(2)}B`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
@@ -25,8 +29,11 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   'hero_crit_damage': <Flame size={18} />,
 };
 
+const BULK_OPTIONS: BulkAmount[] = [1, 10, 25, 100, 'max'];
+
 export const UpgradeScreen: React.FC<UpgradeScreenProps> = ({ engine, onClose }) => {
   const [activeTab, setActiveTab] = useState<TabType>('hero');
+  const [bulkAmount, setBulkAmount] = useState<BulkAmount>(1);
   const gold = useGameState(engine, s => s.gold);
   const heroUpgrades = useGameState(engine, s => s.heroUpgrades);
   const skillUpgrades = useGameState(engine, s => s.skillUpgrades);
@@ -35,12 +42,21 @@ export const UpgradeScreen: React.FC<UpgradeScreenProps> = ({ engine, onClose })
   const heroUpgradesList = heroPlugin?.getHeroUpgrades() ?? [];
   const skillUpgradesList = heroPlugin?.getSkillUpgrades() ?? [];
 
+  const getBulkCount = (upgradeId: string): number => {
+    if (bulkAmount === 'max') {
+      return heroPlugin?.getMaxPurchasable(upgradeId) ?? 0;
+    }
+    return bulkAmount;
+  };
+
   const handleHeroUpgrade = (upgradeId: string) => {
-    heroPlugin?.purchaseHeroUpgrade(upgradeId);
+    const count = getBulkCount(upgradeId);
+    heroPlugin?.purchaseHeroUpgrade(upgradeId, count);
   };
 
   const handleSkillUpgrade = (skillId: string) => {
-    heroPlugin?.purchaseSkillUpgrade(skillId as any);
+    const count = bulkAmount === 'max' ? 50 : bulkAmount;
+    heroPlugin?.purchaseSkillUpgrade(skillId as any, count);
   };
 
   // Calculate total hero level for display
@@ -111,48 +127,87 @@ export const UpgradeScreen: React.FC<UpgradeScreenProps> = ({ engine, onClose })
           </button>
         </div>
 
-        {/* Tabs */}
+        {/* Bulk Selector + Tabs */}
         <div
           style={{
             flexShrink: 0,
             display: 'flex',
+            flexDirection: 'column',
             borderBottom: '1px solid #1a2a3a',
           }}
         >
-          <button
-            onClick={() => setActiveTab('hero')}
-            className="font-pixel"
+          {/* Bulk purchase selector */}
+          <div
             style={{
-              flex: 1,
-              background: activeTab === 'hero' ? '#001a20' : 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'hero' ? '2px solid #00f5ff' : '2px solid transparent',
-              color: activeTab === 'hero' ? '#00f5ff' : '#3a5a6a',
-              padding: '10px',
-              fontSize: '8px',
-              letterSpacing: '2px',
-              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              padding: '8px 12px',
+              background: '#050508',
+              borderBottom: '1px solid #1a1a2a',
             }}
           >
-            TAP POWER
-          </button>
-          <button
-            onClick={() => setActiveTab('skills')}
-            className="font-pixel"
-            style={{
-              flex: 1,
-              background: activeTab === 'skills' ? '#100018' : 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'skills' ? '2px solid #ff0080' : '2px solid transparent',
-              color: activeTab === 'skills' ? '#ff0080' : '#3a5a6a',
-              padding: '10px',
-              fontSize: '8px',
-              letterSpacing: '2px',
-              cursor: 'pointer',
-            }}
-          >
-            SKILLS
-          </button>
+            <span style={{ color: '#3a5a6a', fontFamily: 'var(--font-mono)', fontSize: '9px', marginRight: 8 }}>
+              BUY:
+            </span>
+            {BULK_OPTIONS.map(opt => (
+              <button
+                key={opt}
+                onClick={() => setBulkAmount(opt)}
+                style={{
+                  background: bulkAmount === opt ? '#00f5ff22' : 'transparent',
+                  border: `1px solid ${bulkAmount === opt ? '#00f5ff' : '#1a2a3a'}`,
+                  color: bulkAmount === opt ? '#00f5ff' : '#3a5a6a',
+                  padding: '4px 8px',
+                  fontSize: '9px',
+                  fontFamily: 'var(--font-mono)',
+                  cursor: 'pointer',
+                  minWidth: 36,
+                }}
+              >
+                {opt === 'max' ? 'MAX' : `x${opt}`}
+              </button>
+            ))}
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex' }}>
+            <button
+              onClick={() => setActiveTab('hero')}
+              className="font-pixel"
+              style={{
+                flex: 1,
+                background: activeTab === 'hero' ? '#001a20' : 'transparent',
+                border: 'none',
+                borderBottom: activeTab === 'hero' ? '2px solid #00f5ff' : '2px solid transparent',
+                color: activeTab === 'hero' ? '#00f5ff' : '#3a5a6a',
+                padding: '10px',
+                fontSize: '8px',
+                letterSpacing: '2px',
+                cursor: 'pointer',
+              }}
+            >
+              TAP POWER
+            </button>
+            <button
+              onClick={() => setActiveTab('skills')}
+              className="font-pixel"
+              style={{
+                flex: 1,
+                background: activeTab === 'skills' ? '#100018' : 'transparent',
+                border: 'none',
+                borderBottom: activeTab === 'skills' ? '2px solid #ff0080' : '2px solid transparent',
+                color: activeTab === 'skills' ? '#ff0080' : '#3a5a6a',
+                padding: '10px',
+                fontSize: '8px',
+                letterSpacing: '2px',
+                cursor: 'pointer',
+              }}
+            >
+              SKILLS
+            </button>
+          </div>
         </div>
 
         {/* Content */}

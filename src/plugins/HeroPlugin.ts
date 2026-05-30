@@ -1,5 +1,16 @@
 import type { IPlugin, IEngine, GameState, SkillId } from '../engine/types';
-import { HERO_CONFIG, SKILL_UPGRADE_CONFIG, type HeroUpgradeDef, type SkillUpgradeDef } from '../config/game.config';
+import { 
+  HERO_CONFIG, 
+  SKILL_UPGRADE_CONFIG, 
+  type HeroUpgradeDef, 
+  type SkillUpgradeDef,
+  getHeroUpgradeCost,
+  getHeroUpgradeBulkCost,
+  getHeroUpgradeValue,
+  getSkillUpgradeCost,
+  getSkillUpgradeBulkCost,
+  getSkillEffectivenessMultiplier,
+} from '../config/game.config';
 
 export class HeroPlugin implements IPlugin {
   id = 'hero';
@@ -20,12 +31,24 @@ export class HeroPlugin implements IPlugin {
   /**
    * Get the cost for the next level of a hero upgrade
    */
-  getHeroUpgradeCost(upgradeId: string): number {
+  getUpgradeCost(upgradeId: string): number {
     const upgrade = HERO_CONFIG.upgrades.find(u => u.id === upgradeId);
     if (!upgrade) return Infinity;
     const level = this.getHeroUpgradeLevel(upgradeId);
     if (level >= upgrade.maxLevel) return Infinity;
-    return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, level));
+    return getHeroUpgradeCost(upgrade, level);
+  }
+
+  /**
+   * Get bulk cost for purchasing multiple levels
+   */
+  getBulkCost(upgradeId: string, count: number): number {
+    const upgrade = HERO_CONFIG.upgrades.find(u => u.id === upgradeId);
+    if (!upgrade) return Infinity;
+    const level = this.getHeroUpgradeLevel(upgradeId);
+    const maxPurchasable = Math.min(count, upgrade.maxLevel - level);
+    if (maxPurchasable <= 0) return Infinity;
+    return getHeroUpgradeBulkCost(upgrade, level, maxPurchasable);
   }
 
   /**
@@ -36,22 +59,24 @@ export class HeroPlugin implements IPlugin {
   }
 
   /**
-   * Purchase a hero upgrade level
+   * Purchase a hero upgrade level (or multiple levels)
    */
-  purchaseHeroUpgrade(upgradeId: string): boolean {
+  purchaseHeroUpgrade(upgradeId: string, count: number = 1): boolean {
     const upgrade = HERO_CONFIG.upgrades.find(u => u.id === upgradeId);
     if (!upgrade) return false;
 
     const level = this.getHeroUpgradeLevel(upgradeId);
-    if (level >= upgrade.maxLevel) return false;
+    const maxPurchasable = Math.min(count, upgrade.maxLevel - level);
+    if (maxPurchasable <= 0) return false;
 
-    const cost = this.getHeroUpgradeCost(upgradeId);
+    const cost = getHeroUpgradeBulkCost(upgrade, level, maxPurchasable);
     if (this.engine.state.gold < cost) return false;
 
     // Deduct gold and increase level
+    const newLevel = level + maxPurchasable;
     const newHeroUpgrades = {
       ...this.engine.state.heroUpgrades,
-      [upgradeId]: level + 1,
+      [upgradeId]: newLevel,
     };
 
     this.engine.updateState({
@@ -60,8 +85,8 @@ export class HeroPlugin implements IPlugin {
     });
 
     // Update modifiers
-    this.updateHeroModifier(upgrade, level + 1);
-    this.engine.emit('hero_upgrade', { upgradeId, newLevel: level + 1 });
+    this.updateHeroModifier(upgrade, newLevel);
+    this.engine.emit('hero_upgrade', { upgradeId, newLevel, levelsPurchased: maxPurchasable });
 
     return true;
   }
@@ -69,12 +94,24 @@ export class HeroPlugin implements IPlugin {
   /**
    * Get the cost for the next level of a skill upgrade
    */
-  getSkillUpgradeCost(skillId: SkillId): number {
+  getSkillCost(skillId: SkillId): number {
     const upgrade = SKILL_UPGRADE_CONFIG.upgrades.find(u => u.skillId === skillId);
     if (!upgrade) return Infinity;
     const level = this.getSkillUpgradeLevel(skillId);
     if (level >= upgrade.maxLevel) return Infinity;
-    return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, level));
+    return getSkillUpgradeCost(upgrade, level);
+  }
+
+  /**
+   * Get bulk cost for purchasing multiple skill levels
+   */
+  getSkillBulkCost(skillId: SkillId, count: number): number {
+    const upgrade = SKILL_UPGRADE_CONFIG.upgrades.find(u => u.skillId === skillId);
+    if (!upgrade) return Infinity;
+    const level = this.getSkillUpgradeLevel(skillId);
+    const maxPurchasable = Math.min(count, upgrade.maxLevel - level);
+    if (maxPurchasable <= 0) return Infinity;
+    return getSkillUpgradeBulkCost(upgrade, level, maxPurchasable);
   }
 
   /**
@@ -91,26 +128,28 @@ export class HeroPlugin implements IPlugin {
     const upgrade = SKILL_UPGRADE_CONFIG.upgrades.find(u => u.skillId === skillId);
     if (!upgrade) return 1;
     const level = this.getSkillUpgradeLevel(skillId);
-    return 1 + level * upgrade.effectPerLevel;
+    return getSkillEffectivenessMultiplier(upgrade, level);
   }
 
   /**
-   * Purchase a skill upgrade level
+   * Purchase a skill upgrade level (or multiple levels)
    */
-  purchaseSkillUpgrade(skillId: SkillId): boolean {
+  purchaseSkillUpgrade(skillId: SkillId, count: number = 1): boolean {
     const upgrade = SKILL_UPGRADE_CONFIG.upgrades.find(u => u.skillId === skillId);
     if (!upgrade) return false;
 
     const level = this.getSkillUpgradeLevel(skillId);
-    if (level >= upgrade.maxLevel) return false;
+    const maxPurchasable = Math.min(count, upgrade.maxLevel - level);
+    if (maxPurchasable <= 0) return false;
 
-    const cost = this.getSkillUpgradeCost(skillId);
+    const cost = getSkillUpgradeBulkCost(upgrade, level, maxPurchasable);
     if (this.engine.state.gold < cost) return false;
 
     // Deduct gold and increase level
+    const newLevel = level + maxPurchasable;
     const newSkillUpgrades = {
       ...this.engine.state.skillUpgrades,
-      [skillId]: level + 1,
+      [skillId]: newLevel,
     };
 
     this.engine.updateState({
@@ -118,7 +157,7 @@ export class HeroPlugin implements IPlugin {
       skillUpgrades: newSkillUpgrades,
     });
 
-    this.engine.emit('skill_upgrade', { skillId, newLevel: level + 1 });
+    this.engine.emit('skill_upgrade', { skillId, newLevel, levelsPurchased: maxPurchasable });
 
     return true;
   }
@@ -126,16 +165,17 @@ export class HeroPlugin implements IPlugin {
   /**
    * Get all hero upgrades with their current state
    */
-  getHeroUpgrades(): (HeroUpgradeDef & { level: number; cost: number; canAfford: boolean })[] {
+  getHeroUpgrades(): (HeroUpgradeDef & { level: number; cost: number; canAfford: boolean; totalValue: number })[] {
     const gold = this.engine.state.gold;
     return HERO_CONFIG.upgrades.map(upgrade => {
       const level = this.getHeroUpgradeLevel(upgrade.id);
-      const cost = this.getHeroUpgradeCost(upgrade.id);
+      const cost = level >= upgrade.maxLevel ? Infinity : getHeroUpgradeCost(upgrade, level);
       return {
         ...upgrade,
         level,
         cost,
         canAfford: gold >= cost && level < upgrade.maxLevel,
+        totalValue: getHeroUpgradeValue(upgrade, level),
       };
     });
   }
@@ -147,8 +187,8 @@ export class HeroPlugin implements IPlugin {
     const gold = this.engine.state.gold;
     return SKILL_UPGRADE_CONFIG.upgrades.map(upgrade => {
       const level = this.getSkillUpgradeLevel(upgrade.skillId);
-      const cost = this.getSkillUpgradeCost(upgrade.skillId);
-      const effectiveness = this.getSkillEffectiveness(upgrade.skillId);
+      const cost = level >= upgrade.maxLevel ? Infinity : getSkillUpgradeCost(upgrade, level);
+      const effectiveness = getSkillEffectivenessMultiplier(upgrade, level);
       return {
         ...upgrade,
         level,
@@ -181,7 +221,7 @@ export class HeroPlugin implements IPlugin {
     if (level > 0) {
       this.engine.addModifier(`hero_${upgrade.id}`, {
         type: upgrade.modifierType,
-        value: upgrade.valuePerLevel * level,
+        value: getHeroUpgradeValue(upgrade, level),
         isMultiplier: upgrade.isMultiplier,
       });
     }
@@ -194,7 +234,26 @@ export class HeroPlugin implements IPlugin {
     const tapPowerUpgrade = HERO_CONFIG.upgrades.find(u => u.id === 'hero_tap_power');
     if (!tapPowerUpgrade) return 0;
     const level = this.getHeroUpgradeLevel('hero_tap_power');
-    return level * tapPowerUpgrade.valuePerLevel;
+    return getHeroUpgradeValue(tapPowerUpgrade, level);
+  }
+
+  /**
+   * Get max purchasable levels with current gold
+   */
+  getMaxPurchasable(upgradeId: string): number {
+    const upgrade = HERO_CONFIG.upgrades.find(u => u.id === upgradeId);
+    if (!upgrade) return 0;
+    
+    const level = this.getHeroUpgradeLevel(upgradeId);
+    let gold = this.engine.state.gold;
+    let count = 0;
+    
+    for (let i = level; i < upgrade.maxLevel && gold >= getHeroUpgradeCost(upgrade, i); i++) {
+      gold -= getHeroUpgradeCost(upgrade, i);
+      count++;
+    }
+    
+    return count;
   }
 
   cleanup(): void {
