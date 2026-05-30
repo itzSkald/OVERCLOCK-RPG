@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// OVERCLOCK — Central Game Config
+// OVERCLOCK — Central Game Config (v1.1)
 //
 // Every tunable constant in the game lives here. Plugins import from this file;
 // they never declare their own magic numbers.
@@ -149,7 +149,7 @@ export const ENEMY_CONFIG = {
   ] as string[],
 } as const;
 
-// ── OVERCLOCK ─────────────────────────────────────────────────────────────────
+// ── OVERCLOCK ────────────────────────────────────────────��────────────────────
 
 export type PerkBranch = 'VOLTAGE' | 'SIGNAL' | 'THERMAL' | 'ENTROPY' | 'QUANTUM';
 
