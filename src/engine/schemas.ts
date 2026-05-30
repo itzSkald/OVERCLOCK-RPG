@@ -203,7 +203,6 @@ const clansSchema: TableSchema = {
     { name: 'description', type: 'text', nullable: true },
     { name: 'leader_id', type: 'uuid', nullable: false },
     { name: 'color', type: 'text', nullable: false, default: "'#00f5ff'" },
-    { name: 'banner_index', type: 'integer', nullable: false, default: '0' },
     { name: 'member_count', type: 'integer', nullable: false, default: '1' },
     { name: 'total_stage', type: 'bigint', nullable: false, default: '0' },
     { name: 'total_overclocks', type: 'bigint', nullable: false, default: '0' },

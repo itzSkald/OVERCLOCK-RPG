@@ -19,6 +19,7 @@ import { ScrapScreen } from './ScrapScreen';
 import { UpgradeScreen } from './UpgradeScreen';
 import { useGameState } from '../../hooks/useGameState';
 import { Tooltip, TooltipLabel, TooltipText } from './Tooltip';
+import { MODULES_CONFIG } from '../../config/modules.config';
 import type { OverclockPlugin } from '../../plugins/OverclockPlugin';
 
 interface GameScreenProps {
@@ -233,46 +234,56 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
           />
           <MobileTab
             icon={<ShoppingBag size={15} color="#3a4a5a" />}
-            label="SHOP"
+            label={MODULES_CONFIG.shop.label ?? 'SHOP'}
             activeColor="#00e5ff"
             onClick={() => setShowShop(true)}
           />
-          <MobileTab
-            icon={<Swords size={15} color="#3a4a5a" />}
-            label="TOURNEY"
-            activeColor="#ffaa00"
-            onClick={() => setShowTournament(true)}
-          />
-          <MobileTab
-            icon={<Users size={15} color="#3a4a5a" />}
-            label="CLAN"
-            activeColor="#00f5ff"
-            onClick={() => setShowClan(true)}
-          />
+          {MODULES_CONFIG.tournaments.enabled && (
+            <MobileTab
+              icon={<Swords size={15} color="#3a4a5a" />}
+              label={MODULES_CONFIG.tournaments.label ?? 'TOURNEY'}
+              activeColor="#ffaa00"
+              onClick={() => setShowTournament(true)}
+            />
+          )}
+          {MODULES_CONFIG.clans.enabled && (
+            <MobileTab
+              icon={<Users size={15} color="#3a4a5a" />}
+              label={MODULES_CONFIG.clans.label ?? 'CLAN'}
+              activeColor="#00f5ff"
+              onClick={() => setShowClan(true)}
+            />
+          )}
           <MobileTab
             icon={<Trash2 size={15} color="#3a4a5a" />}
             label="SCRAP"
             activeColor="#ff4444"
             onClick={() => setShowScrap(true)}
           />
-          <MobileTab
-            icon={<Trophy size={15} color="#3a4a5a" />}
-            label="RANKS"
-            activeColor="#00f5ff"
-            onClick={() => setShowLeaderboard(true)}
-          />
-          <MobileTab
-            icon={<Clock size={15} color="#3a4a5a" />}
-            label="DAILY"
-            activeColor="#00f5ff"
-            onClick={() => setShowDailies(true)}
-          />
-          <MobileTab
-            icon={<Award size={15} color="#3a4a5a" />}
-            label="FEATS"
-            activeColor="#ffaa00"
-            onClick={() => setShowAchievements(true)}
-          />
+          {MODULES_CONFIG.leaderboard.enabled && (
+            <MobileTab
+              icon={<Trophy size={15} color="#3a4a5a" />}
+              label={MODULES_CONFIG.leaderboard.label ?? 'RANKS'}
+              activeColor="#00f5ff"
+              onClick={() => setShowLeaderboard(true)}
+            />
+          )}
+          {MODULES_CONFIG.dailyOps.enabled && (
+            <MobileTab
+              icon={<Clock size={15} color="#3a4a5a" />}
+              label={MODULES_CONFIG.dailyOps.label ?? 'DAILY'}
+              activeColor="#00f5ff"
+              onClick={() => setShowDailies(true)}
+            />
+          )}
+          {MODULES_CONFIG.achievements.enabled && (
+            <MobileTab
+              icon={<Award size={15} color="#3a4a5a" />}
+              label={MODULES_CONFIG.achievements.label ?? 'FEATS'}
+              activeColor="#ffaa00"
+              onClick={() => setShowAchievements(true)}
+            />
+          )}
         </div>
 
         {/* Components drawer */}
@@ -436,42 +447,46 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
           </Tooltip>
 
           {/* Tournament */}
-          <Tooltip content={<><TooltipLabel label="TOURNAMENT" color="#ffaa00" /><TooltipText>Compete against other players for Diamond prizes.</TooltipText></>} position="left">
-            <button
-              onClick={() => setShowTournament(true)}
-              style={{
-                width: '100%', background: '#080808',
-                border: '1px solid #1a1200',
-                color: '#3a2a00', padding: '12px 10px',
-                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#ffaa00'; e.currentTarget.style.color = '#ffaa00'; e.currentTarget.style.boxShadow = '0 0 14px rgba(255,170,0,0.2)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1200'; e.currentTarget.style.color = '#3a2a00'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <Swords size={20} />
-              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>TOURNEY</div>
-            </button>
-          </Tooltip>
+          {MODULES_CONFIG.tournaments.enabled && (
+            <Tooltip content={<><TooltipLabel label="TOURNAMENT" color="#ffaa00" /><TooltipText>Compete against other players for Diamond prizes.</TooltipText></>} position="left">
+              <button
+                onClick={() => setShowTournament(true)}
+                style={{
+                  width: '100%', background: '#080808',
+                  border: '1px solid #1a1200',
+                  color: '#3a2a00', padding: '12px 10px',
+                  cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#ffaa00'; e.currentTarget.style.color = '#ffaa00'; e.currentTarget.style.boxShadow = '0 0 14px rgba(255,170,0,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1200'; e.currentTarget.style.color = '#3a2a00'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <Swords size={20} />
+                <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>TOURNEY</div>
+              </button>
+            </Tooltip>
+          )}
 
           {/* Clan */}
-          <Tooltip content={<><TooltipLabel label="CLAN" color="#00f5ff" /><TooltipText>Join or create a clan to team up with other players.</TooltipText></>} position="left">
-            <button
-              onClick={() => setShowClan(true)}
-              style={{
-                width: '100%', background: '#080810',
-                border: '1px solid #0a2838',
-                color: '#2a4a5a', padding: '12px 10px',
-                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a4a5a'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <Users size={20} />
-              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>CLAN</div>
-            </button>
-          </Tooltip>
+          {MODULES_CONFIG.clans.enabled && (
+            <Tooltip content={<><TooltipLabel label="CLAN" color="#00f5ff" /><TooltipText>Join or create a clan to team up with other players.</TooltipText></>} position="left">
+              <button
+                onClick={() => setShowClan(true)}
+                style={{
+                  width: '100%', background: '#080810',
+                  border: '1px solid #0a2838',
+                  color: '#2a4a5a', padding: '12px 10px',
+                  cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a4a5a'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <Users size={20} />
+                <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>CLAN</div>
+              </button>
+            </Tooltip>
+          )}
 
           {/* Scrapyard */}
           <Tooltip content={<><TooltipLabel label="SCRAPYARD" color="#ff4444" /><TooltipText>Dismantle unwanted hardware into scrap components.</TooltipText></>} position="left">
@@ -493,55 +508,61 @@ export const GameScreen: React.FC<GameScreenProps> = ({ engine, player }) => {
           </Tooltip>
 
           {/* Leaderboard */}
-          <Tooltip content={<><TooltipLabel label="LEADERBOARD" /><TooltipText>Global rankings by stage and overclock count.</TooltipText></>} position="left">
-            <button
-              onClick={() => setShowLeaderboard(true)}
-              style={{
-                width: '100%', background: '#080810', border: '1px solid #0a2838', color: '#2a4a5a', padding: '12px 10px',
-                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a4a5a'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <Trophy size={20} />
-              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>RANKS</div>
-            </button>
-          </Tooltip>
+          {MODULES_CONFIG.leaderboard.enabled && (
+            <Tooltip content={<><TooltipLabel label="LEADERBOARD" /><TooltipText>Global rankings by stage and overclock count.</TooltipText></>} position="left">
+              <button
+                onClick={() => setShowLeaderboard(true)}
+                style={{
+                  width: '100%', background: '#080810', border: '1px solid #0a2838', color: '#2a4a5a', padding: '12px 10px',
+                  cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a4a5a'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <Trophy size={20} />
+                <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>RANKS</div>
+              </button>
+            </Tooltip>
+          )}
 
           {/* Daily Challenges */}
-          <Tooltip content={<><TooltipLabel label="DAILY OPS" color="#00f5ff" /><TooltipText>Complete challenges for gold and diamond rewards.</TooltipText></>} position="left">
-            <button
-              onClick={() => setShowDailies(true)}
-              style={{
-                width: '100%', background: '#080810', border: '1px solid #0a2838', color: '#2a4a5a', padding: '12px 10px',
-                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a4a5a'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <Clock size={20} />
-              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>DAILY OPS</div>
-            </button>
-          </Tooltip>
+          {MODULES_CONFIG.dailyOps.enabled && (
+            <Tooltip content={<><TooltipLabel label="DAILY OPS" color="#00f5ff" /><TooltipText>Complete challenges for gold and diamond rewards.</TooltipText></>} position="left">
+              <button
+                onClick={() => setShowDailies(true)}
+                style={{
+                  width: '100%', background: '#080810', border: '1px solid #0a2838', color: '#2a4a5a', padding: '12px 10px',
+                  cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#00f5ff'; e.currentTarget.style.color = '#00f5ff'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,245,255,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#0a2838'; e.currentTarget.style.color = '#2a4a5a'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <Clock size={20} />
+                <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>DAILY OPS</div>
+              </button>
+            </Tooltip>
+          )}
 
           {/* Achievements */}
-          <Tooltip content={<><TooltipLabel label="ACHIEVEMENTS" color="#ffaa00" /><TooltipText>Permanent milestones across all runs.</TooltipText></>} position="left">
-            <button
-              onClick={() => setShowAchievements(true)}
-              style={{
-                width: '100%', background: '#080810', border: '1px solid #1a1a0a', color: '#2a3a2a', padding: '12px 10px',
-                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#ffaa00'; e.currentTarget.style.color = '#ffaa00'; e.currentTarget.style.boxShadow = '0 0 14px rgba(255,170,0,0.2)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a0a'; e.currentTarget.style.color = '#2a3a2a'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <Award size={20} />
-              <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>FEATS</div>
-            </button>
-          </Tooltip>
+          {MODULES_CONFIG.achievements.enabled && (
+            <Tooltip content={<><TooltipLabel label="ACHIEVEMENTS" color="#ffaa00" /><TooltipText>Permanent milestones across all runs.</TooltipText></>} position="left">
+              <button
+                onClick={() => setShowAchievements(true)}
+                style={{
+                  width: '100%', background: '#080810', border: '1px solid #1a1a0a', color: '#2a3a2a', padding: '12px 10px',
+                  cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#ffaa00'; e.currentTarget.style.color = '#ffaa00'; e.currentTarget.style.boxShadow = '0 0 14px rgba(255,170,0,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a0a'; e.currentTarget.style.color = '#2a3a2a'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <Award size={20} />
+                <div className="font-pixel" style={{ fontSize: '7px', letterSpacing: '2px' }}>FEATS</div>
+              </button>
+            </Tooltip>
+          )}
         </div>
       </div>
     </div>
