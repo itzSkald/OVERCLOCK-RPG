@@ -8,7 +8,7 @@ export interface Clan {
   description: string;
   leader_id: string;
   color: string;
-  banner_index: number;
+  banner_index?: number; // Optional - may not exist in older schemas
   member_count: number;
   total_stage: number;
   total_overclocks: number;
@@ -138,7 +138,7 @@ export class ClanPlugin implements IPlugin {
     const { data: clan } = await this.engine.storage.load<Clan>(
       'clans',
       { id: membership.clan_id },
-      'id, name, tag, description, leader_id, color, banner_index, member_count, total_stage, total_overclocks, created_at'
+      'id, name, tag, description, leader_id, color, member_count, total_stage, total_overclocks, created_at'
     );
 
     this.myClan = clan;
@@ -166,7 +166,7 @@ export class ClanPlugin implements IPlugin {
     const { data } = await this.engine.storage.loadMany<Clan>(
       'clans',
       {},
-      'id, name, tag, description, leader_id, color, banner_index, member_count, total_stage, total_overclocks, created_at'
+      'id, name, tag, description, leader_id, color, member_count, total_stage, total_overclocks, created_at'
     );
     this.allClans = data.sort((a, b) => b.total_stage - a.total_stage);
   }
@@ -268,12 +268,11 @@ export class ClanPlugin implements IPlugin {
         description: description.trim().slice(0, 200),
         leader_id: this.userId,
         color,
-        banner_index: 0,
         member_count: 1,
         total_stage: this.engine.state.highestStage,
         total_overclocks: this.engine.state.totalOverclocks,
       },
-      'id, name, tag, description, leader_id, color, banner_index, member_count, total_stage, total_overclocks, created_at'
+      'id, name, tag, description, leader_id, color, member_count, total_stage, total_overclocks, created_at'
     );
 
     if (clanError || !clan) {
