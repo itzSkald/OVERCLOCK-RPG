@@ -182,13 +182,12 @@ const BoardPanel: React.FC<BoardPanelProps> = ({
   engine, equipped, ramSlots, expansionSlots, activeSlot, onSelectSlot,
 }) => {
   const moboPlugin = engine.getPlugin<MoboPlugin>('mobo');
-  const gold = useGameState(engine, s => s.gold);
   const diamonds = useGameState(engine, s => s.diamonds ?? 0);
   const motherboardTier = useGameState(engine, s => s.motherboardTier ?? 0);
 
   const currentTier = MOBO_TIERS[motherboardTier] ?? MOBO_TIERS[0];
   const nextTier = MOBO_TIERS[motherboardTier + 1] ?? null;
-  const canUpgrade = !!nextTier && gold >= nextTier.goldCost && diamonds >= nextTier.diamondCost;
+  const canUpgrade = !!nextTier && diamonds >= nextTier.diamondCost;
 
   return (
     <div
@@ -278,15 +277,10 @@ const BoardPanel: React.FC<BoardPanelProps> = ({
           >
             <ArrowUpCircle size={8} />
             <span>{nextTier.revision}</span>
-            {nextTier.goldCost > 0 && (
-              <span style={{ marginLeft: 4 }}>◆{formatGold(nextTier.goldCost)}</span>
-            )}
-            {nextTier.diamondCost > 0 && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, marginLeft: 4, color: canUpgrade && diamonds >= nextTier.diamondCost ? '#00e5ff' : '#1a3a3a' }}>
-                <Diamond size={7} />
-                {nextTier.diamondCost}
-              </span>
-            )}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, marginLeft: 4, color: canUpgrade ? '#00e5ff' : '#1a3a3a' }}>
+              <Diamond size={7} />
+              {nextTier.diamondCost}
+            </span>
           </button>
         ) : (
           <div className="font-pixel" style={{ color: '#1a4a1a', fontSize: '5px', letterSpacing: '1px' }}>

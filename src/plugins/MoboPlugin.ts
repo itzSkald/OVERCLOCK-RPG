@@ -1,5 +1,4 @@
 import type { IPlugin, IEngine, GameState } from '../engine/types';
-import type { GoldPlugin } from './GoldPlugin';
 import { MOBO_TIERS, type MoboTierDef } from '../config/game.config';
 
 export type { MoboTierDef };
@@ -33,10 +32,6 @@ export class MoboPlugin implements IPlugin {
     // Check if player has enough diamonds
     const diamonds = this.engine.state.diamonds ?? 0;
     if (diamonds < next.diamondCost) return false;
-
-    // Check and spend gold
-    const goldPlugin = this.engine.getPlugin<GoldPlugin>('gold');
-    if (!goldPlugin?.spend(next.goldCost)) return false;
 
     // Spend diamonds
     if (next.diamondCost > 0) {

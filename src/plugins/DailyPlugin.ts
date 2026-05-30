@@ -13,7 +13,7 @@ export interface DailyChallenge {
   challenge_date: string;
 }
 
-function getDiamondReward(challengeType: string, highestStage: number): number {
+export function getDiamondReward(challengeType: string, highestStage: number): number {
   const base = Math.max(1, Math.floor(highestStage / DAILY_CONFIG.diamondStageDivisor));
   const weight = DAILY_CONFIG.diamondDifficulty[challengeType] ?? 1;
   return Math.min(DAILY_CONFIG.maxDiamondReward, Math.floor(base * weight));
