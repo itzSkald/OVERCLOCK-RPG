@@ -28,6 +28,29 @@ import type {
   SkillId,
 } from '../engine/types';
 
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+
+export const AUTH_CONFIG = {
+  /**
+   * When true, Supabase will send a confirmation email and users must verify
+   * their address before they can log in.
+   * When false, registration completes immediately — email is stored only for
+   * password-reset recovery.
+   *
+   * NOTE: This flag controls client-side behaviour (skip the confirmation screen,
+   * attempt sign-in immediately after sign-up). You must also disable email
+   * confirmation in the Supabase dashboard:
+   *   Authentication → Providers → Email → "Confirm email" toggle → OFF
+   */
+  emailConfirmationEnabled: false,
+
+  /**
+   * Login is username-based (handle). Email is collected at registration only
+   * for account-recovery (password reset) purposes.
+   */
+  loginWithUsername: true,
+} as const;
+
 // ── ENGINE ────────────────────────────────────────────────────────────────────
 
 export const ENGINE_CONFIG = {
