@@ -150,7 +150,7 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ engine, on
         >
           <div style={{ width: 32, color: '#2a4a5a', fontFamily: 'var(--font-mono)', fontSize: '8px' }}>#</div>
           <div style={{ flex: 1, color: '#2a4a5a', fontFamily: 'var(--font-mono)', fontSize: '8px' }}>HANDLE</div>
-          <div style={{ width: 56, color: '#2a4a5a', fontFamily: 'var(--font-mono)', fontSize: '8px', textAlign: 'right' }}>STAGE</div>
+          <div style={{ width: 56, color: '#2a4a5a', fontFamily: 'var(--font-mono)', fontSize: '8px', textAlign: 'right' }}>MAX STG</div>
           <div style={{ width: 44, color: '#2a4a5a', fontFamily: 'var(--font-mono)', fontSize: '8px', textAlign: 'right' }}>OC</div>
           <div style={{ width: 64, color: '#2a4a5a', fontFamily: 'var(--font-mono)', fontSize: '8px', textAlign: 'right' }}>DMG</div>
         </div>
@@ -244,7 +244,7 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ engine, on
           style={{ borderTop: '1px solid #0a1828', flexShrink: 0, background: '#020810' }}
         >
           <div style={{ color: '#1a3a4a', fontFamily: 'var(--font-mono)', fontSize: '7px' }}>
-            RANKED BY HIGHEST STAGE
+            RANKED BY MAX STAGE
           </div>
           <div className="flex items-center gap-1">
             <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 4px #39ff14' }} />

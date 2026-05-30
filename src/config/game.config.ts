@@ -156,7 +156,9 @@ export interface OverclockPerkDef {
 
 export const OVERCLOCK_CONFIG = {
   /** Minimum highestStage required before the player can overclock. */
-  minStageToOverclock: 10,
+  minStageToOverclock: 500,
+  /** Number of stages required to earn 1 base OCT. Higher = harder to get points. */
+  stagesPerOCT: 500,
   /** Number of overclock runs per tier progression. */
   runsPerTier: 3,
   /** Maximum achievable tier. */
@@ -166,14 +168,15 @@ export const OVERCLOCK_CONFIG = {
 
   /** Milestone stage → bonus OCTs awarded on reaching that stage. */
   milestones: [
-    { stage: 25,   bonus: 2   },
-    { stage: 50,   bonus: 5   },
-    { stage: 100,  bonus: 10  },
-    { stage: 200,  bonus: 20  },
-    { stage: 500,  bonus: 50  },
-    { stage: 1000, bonus: 100 },
-    { stage: 2500, bonus: 250 },
-    { stage: 5000, bonus: 500 },
+    { stage: 1000,   bonus: 1   },
+    { stage: 5000,   bonus: 2   },
+    { stage: 10000,  bonus: 3   },
+    { stage: 25000,  bonus: 5   },
+    { stage: 50000,  bonus: 10  },
+    { stage: 100000, bonus: 20  },
+    { stage: 250000, bonus: 50  },
+    { stage: 500000, bonus: 100 },
+    { stage: 999999, bonus: 500 },
   ] as { stage: number; bonus: number }[],
 
   /** Display name for each tier (index = tier number). */

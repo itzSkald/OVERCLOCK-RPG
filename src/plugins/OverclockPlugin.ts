@@ -15,7 +15,8 @@ export const TIER_NAMES = OVERCLOCK_CONFIG.tierNames;
 
 export function calculateOverclockGain(highestStage: number, tier: number): number {
   if (highestStage < OVERCLOCK_CONFIG.minStageToOverclock) return 0;
-  const base = Math.floor(Math.max(0, highestStage - 9) / 5) + 1;
+  // Base OCT: 1 point per stagesPerOCT stages reached
+  const base = Math.floor(highestStage / OVERCLOCK_CONFIG.stagesPerOCT);
   const milestoneBonus = OVERCLOCK_CONFIG.milestones
     .filter(m => highestStage >= m.stage)
     .reduce((sum, m) => sum + m.bonus, 0);
