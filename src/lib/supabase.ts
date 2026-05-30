@@ -1,21 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Fallback values for the correct Supabase project
-const FALLBACK_SUPABASE_URL = 'https://akfzmzfjvrmzwkvltpko.supabase.co';
-const FALLBACK_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrZnptemZqdnJtendrdmx0cGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwODczNTEsImV4cCI6MjA5NTY2MzM1MX0.t9JlaLOfrjTIDzDknD-O3nlhHZWqo6X-fDoDAfFH-Sk';
-
-// Prioritize env vars, fallback to hardcoded values
+// Read Supabase config from environment variables (modular - no hardcoded values)
 const supabaseUrl = (
   import.meta.env.NEXT_PUBLIC_SUPABASE_URL || 
-  import.meta.env.VITE_SUPABASE_URL || 
-  FALLBACK_SUPABASE_URL
+  import.meta.env.VITE_SUPABASE_URL
 ) as string;
 
 const supabaseAnonKey = (
   import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 
-  FALLBACK_SUPABASE_ANON_KEY
+  import.meta.env.VITE_SUPABASE_ANON_KEY
 ) as string;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Supabase env vars missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment.',
+  );
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
