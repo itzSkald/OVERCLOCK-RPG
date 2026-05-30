@@ -109,9 +109,16 @@ export class GameEngine implements IEngine {
     this.emit('boot_log', '> OVERCLOCK.EXE v1.0.0');
     this.emit('boot_log', '> INITIALIZING ENGINE...');
     
-    // Register and auto-create database schemas
+    // Register schemas from centralized definitions
     this.emit('boot_log', '> CHECKING DATABASE SCHEMA...');
     registerAllSchemas();
+    
+    // Also register schemas from individual plugins
+    for (const plugin of this.registry.all()) {
+      schemaManager.registerPluginSchemas(plugin);
+    }
+    
+    // Auto-create missing tables
     try {
       const schemaLog = await schemaManager.ensureSchemas();
       for (const line of schemaLog) {

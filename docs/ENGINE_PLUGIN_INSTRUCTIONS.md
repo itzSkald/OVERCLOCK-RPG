@@ -433,37 +433,52 @@ const modals = (
 
 ## 8. Database Integration (Auto-Schema)
 
-The engine now supports **automatic table creation** via the `SchemaManager`. Instead of manually running migrations, define your table schema in code and the engine will create it on boot if missing.
+**Each plugin can define its own database tables.** The engine auto-creates missing tables on boot — no manual migrations needed.
 
-### Option A: Add Schema to `src/engine/schemas.ts` (Recommended)
+### Per-Plugin Schema (Recommended)
+
+Add a `schema` property to your plugin class. The engine registers and creates these tables automatically:
 
 ```typescript
-// In src/engine/schemas.ts
+import type { IPlugin, IEngine, GameState, TableSchema } from '../engine/types';
 
-const myFeatureSchema: TableSchema = {
-  name: 'my_feature',
-  columns: [
-    { name: 'id', type: 'uuid', primaryKey: true, default: 'gen_random_uuid()' },
-    { name: 'user_id', type: 'uuid', nullable: false },
-    { name: 'data', type: 'jsonb', nullable: true },
-    { name: 'created_at', type: 'timestamptz', nullable: false, default: 'now()' },
-  ],
-  indexes: [
-    { name: 'idx_my_feature_user_id', columns: ['user_id'] },
-  ],
-  rls: [
-    { name: 'my_feature_select_own', operation: 'SELECT', using: 'auth.uid() = user_id' },
-    { name: 'my_feature_insert_own', operation: 'INSERT', withCheck: 'auth.uid() = user_id' },
-    { name: 'my_feature_update_own', operation: 'UPDATE', using: 'auth.uid() = user_id' },
-  ],
-};
+export class MyFeaturePlugin implements IPlugin {
+  id = 'my_feature';
+  
+  /** Define database tables this plugin requires - auto-created on boot */
+  schema: TableSchema[] = [{
+    name: 'my_feature_data',
+    columns: [
+      { name: 'id', type: 'uuid', primaryKey: true, default: 'gen_random_uuid()' },
+      { name: 'user_id', type: 'uuid', nullable: false },
+      { name: 'score', type: 'integer', nullable: false, default: '0' },
+      { name: 'data', type: 'jsonb', nullable: true },
+      { name: 'created_at', type: 'timestamptz', nullable: false, default: 'now()' },
+    ],
+    indexes: [
+      { name: 'idx_my_feature_user_id', columns: ['user_id'] },
+    ],
+    rls: [
+      { name: 'my_feature_select_own', operation: 'SELECT', using: 'auth.uid() = user_id' },
+      { name: 'my_feature_insert_own', operation: 'INSERT', withCheck: 'auth.uid() = user_id' },
+      { name: 'my_feature_update_own', operation: 'UPDATE', using: 'auth.uid() = user_id' },
+    ],
+  }];
 
-// Then add to registerAllSchemas():
-export function registerAllSchemas(): void {
-  // ... existing schemas
-  schemaManager.register(myFeatureSchema);
+  async init(engine: IEngine): Promise<void> {
+    // Table is auto-created before init() is called
+    engine.storage.registerTable(this.id, { table: 'my_feature_data', userScoped: true });
+    // ...
+  }
 }
 ```
+
+### How It Works
+
+1. Plugin defines `schema: TableSchema[]` property
+2. On engine boot, `schemaManager.registerPluginSchemas(plugin)` is called for each plugin
+3. `schemaManager.ensureSchemas()` checks each table and creates missing ones
+4. Plugin `init()` is called after schemas are ready
 
 ### Schema Definition Reference
 
@@ -494,7 +509,11 @@ interface RLSPolicy {
 }
 ```
 
-### Option B: Manual Migration File (Legacy)
+### Option B: Centralized Schema (for shared tables)
+
+Add schemas to `src/engine/schemas.ts` for tables used by multiple plugins.
+
+### Option C: Manual Migration File (Legacy)
 
 Location: `supabase/migrations/YYYYMMDDHHMMSS_description.sql`
 

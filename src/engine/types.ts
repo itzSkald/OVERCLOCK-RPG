@@ -211,12 +211,50 @@ export interface DamageNumberEvent {
 
 export type PluginRole = 'auth' | 'persistence' | 'realtime' | 'tick_provider' | 'ui_registry';
 
+/** Column definition for auto-schema creation */
+export interface ColumnDef {
+  name: string;
+  type: string;
+  primaryKey?: boolean;
+  default?: string;
+  nullable?: boolean;
+  unique?: boolean;
+  references?: { table: string; column: string; onDelete?: 'CASCADE' | 'SET NULL' | 'RESTRICT' };
+  check?: string;
+}
+
+/** Index definition for auto-schema creation */
+export interface IndexDef {
+  name: string;
+  columns: string[];
+  unique?: boolean;
+}
+
+/** RLS policy definition for auto-schema creation */
+export interface RLSPolicy {
+  name: string;
+  operation: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'ALL';
+  using?: string;
+  withCheck?: string;
+}
+
+/** Table schema definition - plugins define this to auto-create their database tables */
+export interface TableSchema {
+  name: string;
+  columns: ColumnDef[];
+  indexes?: IndexDef[];
+  rls?: RLSPolicy[];
+}
+
 export interface IPlugin {
   id: string;
   dependencies?: string[];
   roles?: PluginRole[];
   defaultState?: Partial<GameState>;
   stateKeys?: (keyof GameState)[];
+  
+  /** Optional: Define database tables this plugin requires. Auto-created on engine boot. */
+  schema?: TableSchema[];
 
   init(engine: IEngine): Promise<void>;
   onTick?(delta: number, state: GameState): void;

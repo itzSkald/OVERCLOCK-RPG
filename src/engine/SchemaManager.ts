@@ -1,43 +1,9 @@
 import { supabase } from '../lib/supabase';
-
-/**
- * Schema definition for a database table.
- * Plugins define their required tables and the SchemaManager ensures they exist.
- */
-export interface TableSchema {
-  name: string;
-  columns: ColumnDef[];
-  indexes?: IndexDef[];
-  rls?: RLSPolicy[];
-}
-
-export interface ColumnDef {
-  name: string;
-  type: string; // e.g., 'uuid', 'text', 'integer', 'timestamptz', 'boolean', 'jsonb'
-  primaryKey?: boolean;
-  default?: string; // SQL default expression, e.g., 'gen_random_uuid()', 'now()', '1'
-  nullable?: boolean; // defaults to false (NOT NULL)
-  references?: { table: string; column: string; onDelete?: 'CASCADE' | 'SET NULL' | 'RESTRICT' };
-  unique?: boolean;
-  check?: string; // CHECK constraint SQL
-}
-
-export interface IndexDef {
-  name: string;
-  columns: string[];
-  unique?: boolean;
-}
-
-export interface RLSPolicy {
-  name: string;
-  operation: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'ALL';
-  using?: string; // SQL expression for USING clause
-  withCheck?: string; // SQL expression for WITH CHECK clause
-}
+import type { TableSchema, ColumnDef, IndexDef, RLSPolicy, IPlugin } from './types';
 
 /**
  * SchemaManager handles automatic table creation on engine boot.
- * Plugins register their schemas, and the manager ensures all tables exist.
+ * Plugins can define their own schemas and the manager ensures all tables exist.
  */
 export class SchemaManager {
   private schemas: TableSchema[] = [];
@@ -49,6 +15,17 @@ export class SchemaManager {
   register(schema: TableSchema): void {
     if (!this.schemas.find(s => s.name === schema.name)) {
       this.schemas.push(schema);
+    }
+  }
+
+  /**
+   * Register all schemas from a plugin's schema property.
+   */
+  registerPluginSchemas(plugin: IPlugin): void {
+    if (plugin.schema) {
+      for (const schema of plugin.schema) {
+        this.register(schema);
+      }
     }
   }
 

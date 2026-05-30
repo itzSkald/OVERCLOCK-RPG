@@ -1,4 +1,5 @@
-import { schemaManager, type TableSchema } from './SchemaManager';
+import { schemaManager } from './SchemaManager';
+import type { TableSchema } from './types';
 
 /**
  * All database table schemas for OVERCLOCK.
