@@ -59,15 +59,21 @@ export class LeaderboardPlugin implements IPlugin {
   }
 
   async fetchLeaderboard(): Promise<void> {
-    const { data } = await this.engine.storage.loadMany<LeaderboardEntry>(
+    console.log('[v0] LeaderboardPlugin.fetchLeaderboard() called');
+    const { data, error } = await this.engine.storage.loadMany<LeaderboardEntry>(
       'leaderboard',
       {},
       'user_id, handle, highest_stage, overclock_count, total_damage, updated_at'
     );
+    console.log('[v0] Leaderboard fetch result:', { dataLength: data?.length, error });
+    if (error) {
+      console.error('[v0] Leaderboard fetch error:', error);
+    }
     if (data) {
       this.entries = data
         .sort((a, b) => b.highest_stage - a.highest_stage || b.total_damage - a.total_damage)
         .map(e => ({ ...e, isOnline: this.onlineUserIds.has(e.user_id) }));
+      console.log('[v0] Leaderboard entries set:', this.entries.length);
       this.notify();
     }
   }

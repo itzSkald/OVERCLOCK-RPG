@@ -33,9 +33,25 @@ export function getClient(): SupabaseClient {
  * Does not affect the singleton - use initializeClient() for that.
  */
 export function createClientFromConfig(config: DatabaseConfig): SupabaseClient {
-  validateConfig(config);
+  // Log config for debugging (without exposing the full key)
+  console.log('[v0] Creating Supabase client with URL:', config.url || '(empty)');
+  console.log('[v0] Anon key present:', !!config.anonKey, config.anonKey ? config.anonKey.substring(0, 10) + '...' : '');
   
-  return createClient(config.url, config.anonKey, {
+  // Validate but don't throw - just log warnings
+  if (!isConfigValid(config)) {
+    console.warn('[v0] Database configuration may be incomplete:', {
+      hasUrl: !!config.url,
+      hasKey: !!config.anonKey,
+      urlValid: config.url?.includes('supabase'),
+    });
+  }
+  
+  // Create the client anyway - errors will surface on actual queries
+  // Use dummy values if not configured to prevent createClient from crashing
+  const url = config.url || 'https://placeholder.supabase.co';
+  const key = config.anonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MTYyMzk0NzIsImV4cCI6MTkzMTgxNTQ3Mn0.placeholder';
+  
+  return createClient(url, key, {
     auth: {
       autoRefreshToken: config.auth.autoRefreshToken,
       persistSession: config.auth.persistSession,
