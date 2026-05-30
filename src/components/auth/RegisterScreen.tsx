@@ -115,7 +115,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ authPlugin, onSw
             />
 
             <TerminalInput
-              label={`RECOVERY EMAIL${AUTH_CONFIG.emailConfirmationEnabled ? '' : ' (PASSWORD RESET ONLY)'}`}
+              label="EMAIL (USED TO LOGIN)"
               value={email}
               onChange={setEmail}
               type="email"
@@ -138,23 +138,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ authPlugin, onSw
               placeholder="repeat key"
             />
           </div>
-
-          {!AUTH_CONFIG.emailConfirmationEnabled && (
-            <div
-              style={{
-                marginBottom: '16px',
-                padding: '8px 10px',
-                border: '1px solid #1a2a1a',
-                background: '#050f05',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
-                color: '#2a5a2a',
-                lineHeight: '1.6',
-              }}
-            >
-              {'> '} Login uses your handle. Email is stored for key recovery only.
-            </div>
-          )}
 
           {error && (
             <div className="mb-4 font-pixel glow-red" style={{ color: '#ff2222', fontSize: '7px', lineHeight: '1.8' }}>

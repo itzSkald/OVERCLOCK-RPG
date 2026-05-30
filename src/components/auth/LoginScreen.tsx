@@ -9,8 +9,7 @@ interface LoginScreenProps {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  USERNAME_NOT_FOUND: 'HANDLE NOT FOUND. CHECK YOUR USERNAME.',
-  'Invalid login credentials': 'INVALID CREDENTIALS. CHECK YOUR KEY.',
+  'Invalid login credentials': 'INVALID CREDENTIALS. CHECK YOUR EMAIL AND KEY.',
   'Email not confirmed': 'CONFIRM YOUR EMAIL BEFORE LOGGING IN.',
 };
 
@@ -19,17 +18,17 @@ function friendlyError(raw: string): string {
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ authPlugin, onSwitchToRegister, onSwitchToReset }) => {
-  const [handle, setHandle] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    const trimmed = handle.trim();
+    const trimmed = email.trim();
     if (!trimmed || !password) return;
     setError('');
     setLoading(true);
-    const { error: err } = await authPlugin.signInWithUsername(trimmed, password);
+    const { error: err } = await authPlugin.signIn(trimmed, password);
     setLoading(false);
     if (err) setError(friendlyError(err));
   };
@@ -62,10 +61,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ authPlugin, onSwitchTo
 
           <div onKeyDown={handleKeyDown}>
             <TerminalInput
-              label="HACKER HANDLE"
-              value={handle}
-              onChange={v => setHandle(v.toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 12))}
-              placeholder="GHOST_RUNNER"
+              label="EMAIL"
+              value={email}
+              onChange={setEmail}
+              type="email"
+              placeholder="user@domain.net"
             />
 
             <TerminalInput

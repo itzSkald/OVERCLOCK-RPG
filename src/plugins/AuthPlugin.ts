@@ -3,27 +3,24 @@
 //
 // Handles user authentication using the modular database layer.
 //
-// Login flow (username-based):
-//   1. User enters handle + password on LoginScreen.
-//   2. AuthPlugin.signInWithUsername() looks up the email for that handle
-//      via a public SELECT on the profiles table (anon policy allows this).
-//   3. Calls Supabase signInWithPassword(email, password).
-//   4. On success, loads/creates the profile and emits auth_success.
+// Login flow (email-based):
+//   1. User enters email + password on LoginScreen.
+//   2. AuthPlugin.signIn() calls Supabase signInWithPassword(email, password).
+//   3. On success, loads/creates the profile and emits auth_success.
 //
 // Registration flow:
-//   1. User enters handle + email (recovery only) + password.
+//   1. User enters handle + email + password.
 //   2. AuthPlugin.signUp() creates the Supabase auth user with the given email.
 //   3. If AUTH_CONFIG.emailConfirmationEnabled === false (default), immediately
-//      signs the user in and creates their profile.
+//      signs the user in and creates their profile row with the chosen handle.
 //   4. If confirmation is enabled, emits auth_awaiting_confirmation and stops.
 //
 // Sign-out flow:
 //   1. AuthPlugin.signOut() calls Supabase signOut (clears the session).
-//   2. The onAuthStateChange listener fires SIGNED_OUT and emits auth_signout.
+//   2. Emits auth_signout immediately.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import * as auth from '../lib/db/auth';
-import { getClient } from '../lib/db/client';
 import { AUTH_CONFIG } from '../config/game.config';
 import type { IPlugin, IEngine, Player } from '../engine/types';
 
@@ -169,30 +166,7 @@ export class AuthPlugin implements IPlugin {
   }
 
   /**
-   * Sign in using a username (handle) + password.
-   * Resolves the handle to an email via the public profiles table, then
-   * calls Supabase signInWithPassword.
-   */
-  async signInWithUsername(
-    handle: string,
-    password: string,
-  ): Promise<{ error: string | null }> {
-    const sanitisedHandle = handle.toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 12);
-
-    // Look up the auth.users email for this handle via the profiles join
-    // The anon RLS policy on profiles allows SELECT for the login lookup.
-    const email = await this.resolveEmailForHandle(sanitisedHandle);
-    if (!email) {
-      return { error: 'USERNAME_NOT_FOUND' };
-    }
-
-    const { error } = await auth.signIn(email, password);
-    if (error) return { error };
-    return { error: null };
-  }
-
-  /**
-   * Sign in directly with email + password (used by ResetScreen and internally).
+   * Sign in with email + password.
    */
   async signIn(email: string, password: string): Promise<{ error: string | null }> {
     const { error } = await auth.signIn(email, password);
@@ -226,43 +200,6 @@ export class AuthPlugin implements IPlugin {
 
   getPlayer(): Player | null {
     return this.currentPlayer;
-  }
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
-
-  /**
-   * Query the profiles table to find which email belongs to a given handle.
-   * Uses the Supabase client directly so it works before the user is
-   * authenticated — the anon "Anyone can read handles for login" RLS policy
-   * permits this SELECT.
-   */
-  private async resolveEmailForHandle(handle: string): Promise<string | null> {
-    try {
-      console.log('[v0] resolveEmailForHandle called with:', handle);
-      
-      // Use ilike for case-insensitive match as a safety net
-      const { data, error } = await getClient()
-        .from('profiles')
-        .select('email, handle')
-        .ilike('handle', handle)
-        .maybeSingle();
-
-      console.log('[v0] profiles query result:', { data, error: error?.message, errorCode: error?.code });
-
-      if (error) {
-        console.error('[AuthPlugin] handle lookup error:', error.message);
-        return null;
-      }
-      if (!data?.email) {
-        console.log('[v0] No email found for handle:', handle);
-        return null;
-      }
-      console.log('[v0] Found email:', data.email);
-      return data.email as string;
-    } catch (err) {
-      console.error('[AuthPlugin] handle lookup exception:', err);
-      return null;
-    }
   }
 
   cleanup(): void {
