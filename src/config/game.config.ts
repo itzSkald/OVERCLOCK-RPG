@@ -186,7 +186,7 @@ export const HERO_CONFIG = {
       costMultiplier: 1.15,        // ~7x cost every 15 levels
       maxLevel: 9999,
       modifierType: 'tap_damage',
-      valuePerLevel: 1,            // +1 tap damage per level (additive before multipliers)
+      valuePerLevel: 2,            // +2 tap damage per level (additive before multipliers)
       isMultiplier: false,
       color: '#00f5ff',
       icon: '👆',
@@ -887,6 +887,221 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplateDef[] = [
 ];
 
 // ── SETS ──────────────────────────────────────────────────────────────────────
+
+// ── ACHIEVEMENTS ──────────────────────────────────────────────────────────────
+
+export interface AchievementDef {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  /** 
+   * Achievement type determines the check condition:
+   * - 'kills': ctx.totalKills >= threshold
+   * - 'boss_kills': ctx.totalBossKills >= threshold
+   * - 'stage': state.highestStage >= threshold
+   * - 'overclocks': state.totalOverclocks >= threshold
+   * - 'gold': ctx.totalGoldEarned >= threshold
+   * - 'skills': ctx.totalSkillsUsed >= threshold
+   * - 'components_unlocked': count of unlocked components >= threshold
+   * - 'component_level': any component level >= threshold
+   * - 'items_equipped': count of equipped items >= threshold
+   * - 'set_complete': specific set completed (threshold is ignored, setId required)
+   * - 'oct_spent': state.octSpent >= threshold
+   * - 'diamonds': state.diamonds >= threshold
+   */
+  type: 'kills' | 'boss_kills' | 'stage' | 'overclocks' | 'gold' | 'skills' | 'components_unlocked' | 'component_level' | 'items_equipped' | 'set_complete' | 'oct_spent' | 'diamonds';
+  threshold: number;
+  setId?: string; // For 'set_complete' type
+}
+
+export const ACHIEVEMENT_CONFIG = {
+  /** Interval in ms for persisting achievement stats to DB. */
+  persistIntervalMs: 30_000,
+  
+  /** All achievement definitions. */
+  achievements: [
+    // ── Kill Milestones ───────────────────────────────────────────────
+    { id: 'first_blood',  name: 'FIRST BLOOD',      description: 'Defeat your first enemy',   icon: 'Crosshair', color: '#00f5ff', type: 'kills',      threshold: 1      },
+    { id: 'kill_100',     name: 'CENTURION',        description: 'Defeat 100 enemies',        icon: 'Target',    color: '#39ff14', type: 'kills',      threshold: 100    },
+    { id: 'kill_500',     name: 'KILL STREAK',      description: 'Defeat 500 enemies',        icon: 'Target',    color: '#39ff14', type: 'kills',      threshold: 500    },
+    { id: 'kill_1000',    name: 'MASS DELETION',    description: 'Defeat 1,000 enemies',      icon: 'Target',    color: '#ffaa00', type: 'kills',      threshold: 1000   },
+    { id: 'kill_5000',    name: 'EXTINCTION EVENT', description: 'Defeat 5,000 enemies',      icon: 'Target',    color: '#ff4444', type: 'kills',      threshold: 5000   },
+    { id: 'kill_10000',   name: 'THE PURGE',        description: 'Defeat 10,000 enemies',     icon: 'Target',    color: '#ff0080', type: 'kills',      threshold: 10000  },
+
+    // ── Boss Kills ───────────────────────────────────────────────────
+    { id: 'boss_slayer',     name: 'BOSS SLAYER',     description: 'Defeat 10 bosses',   icon: 'Skull', color: '#ff4444', type: 'boss_kills', threshold: 10  },
+    { id: 'boss_slayer_50',  name: 'APEX PREDATOR',   description: 'Defeat 50 bosses',   icon: 'Skull', color: '#ff4444', type: 'boss_kills', threshold: 50  },
+    { id: 'boss_slayer_100', name: 'BOSS HUNTER',     description: 'Defeat 100 bosses',  icon: 'Skull', color: '#ff2200', type: 'boss_kills', threshold: 100 },
+    { id: 'boss_slayer_500', name: 'OVERLORD KILLER', description: 'Defeat 500 bosses',  icon: 'Skull', color: '#dd0000', type: 'boss_kills', threshold: 500 },
+
+    // ── Stage Milestones ─────────────────────────────────────────────
+    { id: 'stage_10',    name: 'WARMING UP',       description: 'Reach stage 10',     icon: 'TrendingUp', color: '#00f5ff', type: 'stage', threshold: 10    },
+    { id: 'stage_25',    name: 'MID GAME',         description: 'Reach stage 25',     icon: 'TrendingUp', color: '#39ff14', type: 'stage', threshold: 25    },
+    { id: 'stage_50',    name: 'DEEP RUN',         description: 'Reach stage 50',     icon: 'TrendingUp', color: '#ffaa00', type: 'stage', threshold: 50    },
+    { id: 'stage_100',   name: 'ENDGAME',          description: 'Reach stage 100',    icon: 'TrendingUp', color: '#ff0080', type: 'stage', threshold: 100   },
+    { id: 'stage_200',   name: 'GOING DEEPER',     description: 'Reach stage 200',    icon: 'TrendingUp', color: '#ff0080', type: 'stage', threshold: 200   },
+    { id: 'stage_500',   name: 'HALF A THOUSAND',  description: 'Reach stage 500',    icon: 'TrendingUp', color: '#ff4444', type: 'stage', threshold: 500   },
+    { id: 'stage_1000',  name: 'FOUR DIGITS',      description: 'Reach stage 1,000',  icon: 'TrendingUp', color: '#ff2200', type: 'stage', threshold: 1000  },
+    { id: 'stage_2500',  name: 'BEYOND THE VOID',  description: 'Reach stage 2,500',  icon: 'TrendingUp', color: '#dd0000', type: 'stage', threshold: 2500  },
+    { id: 'stage_5000',  name: 'THE FINAL STAGE',  description: 'Reach stage 5,000',  icon: 'TrendingUp', color: '#aa0000', type: 'stage', threshold: 5000  },
+    { id: 'stage_10000', name: 'INFINITY',         description: 'Reach stage 10,000', icon: 'TrendingUp', color: '#880000', type: 'stage', threshold: 10000 },
+
+    // ── Overclock Achievements ───────────────────────────────────────
+    { id: 'first_reboot',     name: 'FIRST REBOOT',      description: 'Perform your first Overclock', icon: 'RefreshCw', color: '#ff0080', type: 'overclocks', threshold: 1   },
+    { id: 'reboot_10',        name: 'CYCLE MASTER',      description: 'Perform 10 Overclocks',        icon: 'RefreshCw', color: '#ff0080', type: 'overclocks', threshold: 10  },
+    { id: 'reboot_25',        name: 'LOOP VETERAN',      description: 'Perform 25 Overclocks',        icon: 'RefreshCw', color: '#ff4444', type: 'overclocks', threshold: 25  },
+    { id: 'reboot_50',        name: 'ENDLESS LOOP',      description: 'Perform 50 Overclocks',        icon: 'RefreshCw', color: '#ff2200', type: 'overclocks', threshold: 50  },
+    { id: 'reboot_100',       name: 'RECURSION GOD',     description: 'Perform 100 Overclocks',       icon: 'RefreshCw', color: '#dd0000', type: 'overclocks', threshold: 100 },
+
+    // ── Gold Achievements ────────────────────────────────────────────
+    { id: 'gold_10k',         name: 'SMALL STASH',       description: 'Earn 10,000 total gold',       icon: 'Coins', color: '#ffaa00', type: 'gold', threshold: 10000      },
+    { id: 'gold_100k',        name: 'VAULT KEEPER',      description: 'Earn 100,000 total gold',      icon: 'Coins', color: '#ffaa00', type: 'gold', threshold: 100000     },
+    { id: 'gold_1m',          name: 'MILLIONAIRE',       description: 'Earn 1,000,000 total gold',    icon: 'Coins', color: '#ff8800', type: 'gold', threshold: 1000000    },
+    { id: 'gold_10m',         name: 'MOGUL',             description: 'Earn 10,000,000 total gold',   icon: 'Coins', color: '#ff6600', type: 'gold', threshold: 10000000   },
+    { id: 'gold_100m',        name: 'TYCOON',            description: 'Earn 100,000,000 total gold',  icon: 'Coins', color: '#ff4400', type: 'gold', threshold: 100000000  },
+    { id: 'gold_1b',          name: 'BILLIONAIRE',       description: 'Earn 1,000,000,000 total gold',icon: 'Coins', color: '#ff2200', type: 'gold', threshold: 1000000000 },
+
+    // ── Skill Achievements ───────────────────────────────────────────
+    { id: 'skill_novice',     name: 'SKILL NOVICE',     description: 'Use skills 50 times',     icon: 'Zap', color: '#00f5ff', type: 'skills', threshold: 50   },
+    { id: 'skill_adept',      name: 'SKILL ADEPT',      description: 'Use skills 200 times',    icon: 'Zap', color: '#39ff14', type: 'skills', threshold: 200  },
+    { id: 'skill_master',     name: 'SKILL MASTER',     description: 'Use skills 500 times',    icon: 'Zap', color: '#ffaa00', type: 'skills', threshold: 500  },
+    { id: 'skill_legend',     name: 'SKILL LEGEND',     description: 'Use skills 1,000 times',  icon: 'Zap', color: '#ff0080', type: 'skills', threshold: 1000 },
+
+    // ── Component Achievements ───────────────────────────────────────
+    { id: 'component_10',     name: 'COMPONENT COLLECTOR', description: 'Unlock all 10 components',      icon: 'Package', color: '#00f5ff', type: 'components_unlocked', threshold: 10  },
+    { id: 'component_lv100',  name: 'MAX COMPONENT',       description: 'Level any component to 100',    icon: 'Package', color: '#ff0080', type: 'component_level',     threshold: 100 },
+
+    // ── Item Achievements ────────────────────────────────────────────
+    { id: 'item_first',       name: 'FIRST LOOT',        description: 'Equip your first item',   icon: 'Award', color: '#00f5ff', type: 'items_equipped', threshold: 1 },
+    { id: 'item_full',        name: 'FULL LOADOUT',      description: 'Equip items in all slots',icon: 'Award', color: '#ff0080', type: 'items_equipped', threshold: 4 },
+
+    // ── Set Achievements ─────────────────────────────────────────────
+    { id: 'set_neural',       name: 'NEURAL COMPLETE',      description: 'Complete the Neural Nexus set',      icon: 'Award', color: '#00f5ff', type: 'set_complete', threshold: 0, setId: 'neural_nexus'    },
+    { id: 'set_ghost',        name: 'GHOST COMPLETE',       description: 'Complete the Ghost Protocol set',    icon: 'Award', color: '#ff0080', type: 'set_complete', threshold: 0, setId: 'ghost_protocol'  },
+    { id: 'set_singularity',  name: 'SINGULARITY COMPLETE', description: 'Complete the Singularity Core set',  icon: 'Award', color: '#ffaa00', type: 'set_complete', threshold: 0, setId: 'singularity_core'},
+
+    // ── Economy Achievements ─────────────────────────────────────────
+    { id: 'oct_spender',      name: 'OCT INVESTOR',     description: 'Spend 100 OCT in the shop', icon: 'ShoppingBag', color: '#ff0080', type: 'oct_spent', threshold: 100 },
+    { id: 'diamond_hoarder',  name: 'DIAMOND HOARDER',  description: 'Accumulate 100 diamonds',   icon: 'Gem',         color: '#00f5ff', type: 'diamonds',  threshold: 100 },
+  ] as AchievementDef[],
+} as const;
+
+// ── ZONES ─────────────────────────────────────────────────────────────────────
+
+export interface ZoneDef {
+  id: number;
+  name: string;
+  label: string;
+  bgColor: string;
+  gridColor: string;
+  particleColor: string;
+  groundColor: string;
+  accentColor: string;
+  farLayerContent: 'hex' | 'bars' | 'traces' | 'racks' | 'void' | 'glitch' | 'fractal' | 'static' | 'overload' | 'stars';
+}
+
+export const ZONE_CONFIG = {
+  /** Number of stages per zone. Zone 0 = 1-500, Zone 1 = 501-1000, etc. */
+  stagesPerZone: 500,
+  
+  /** All zone definitions. */
+  zones: [
+    { id: 0, name: 'PERIMETER', label: 'ZONE 0: PERIMETER', bgColor: '#0a0a0f', gridColor: 'rgba(0,245,255,0.04)',   particleColor: '#00f5ff', groundColor: '#00f5ff', accentColor: '#00f5ff', farLayerContent: 'hex'     },
+    { id: 1, name: 'FIREWALL',  label: 'ZONE 1: FIREWALL',  bgColor: '#0f0808', gridColor: 'rgba(255,34,34,0.05)',   particleColor: '#ff2222', groundColor: '#ff0080', accentColor: '#ff2222', farLayerContent: 'bars'    },
+    { id: 2, name: 'KERNEL',    label: 'ZONE 2: KERNEL',    bgColor: '#080f08', gridColor: 'rgba(57,255,20,0.04)',   particleColor: '#39ff14', groundColor: '#39ff14', accentColor: '#39ff14', farLayerContent: 'traces'  },
+    { id: 3, name: 'CORE',      label: 'ZONE 3: CORE',      bgColor: '#0f0c06', gridColor: 'rgba(255,170,0,0.04)',   particleColor: '#ffaa00', groundColor: '#ffaa00', accentColor: '#ffaa00', farLayerContent: 'racks'   },
+    { id: 4, name: 'THE VOID',  label: 'ZONE 4: THE VOID',  bgColor: '#050508', gridColor: 'rgba(200,200,255,0.02)', particleColor: '#ffffff', groundColor: '#ffffff', accentColor: '#ffffff', farLayerContent: 'void'    },
+    { id: 5, name: 'ABYSS',     label: 'ZONE 5: ABYSS',     bgColor: '#0d0208', gridColor: 'rgba(255,0,128,0.04)',   particleColor: '#ff0080', groundColor: '#ff0080', accentColor: '#ff0080', farLayerContent: 'glitch'  },
+    { id: 6, name: 'FRACTURE',  label: 'ZONE 6: FRACTURE',  bgColor: '#0a0206', gridColor: 'rgba(204,68,255,0.04)',  particleColor: '#cc44ff', groundColor: '#cc44ff', accentColor: '#cc44ff', farLayerContent: 'fractal' },
+    { id: 7, name: 'ENTROPY',   label: 'ZONE 7: ENTROPY',   bgColor: '#070505', gridColor: 'rgba(255,68,68,0.03)',   particleColor: '#ff4444', groundColor: '#ff4444', accentColor: '#ff4444', farLayerContent: 'static'  },
+    { id: 8, name: 'OVERLOAD',  label: 'ZONE 8: OVERLOAD',  bgColor: '#0c0c04', gridColor: 'rgba(255,204,0,0.03)',   particleColor: '#ffcc00', groundColor: '#ffcc00', accentColor: '#ffcc00', farLayerContent: 'overload'},
+    { id: 9, name: 'SINGULARITY',label:'ZONE 9: SINGULARITY',bgColor:'#020204', gridColor: 'rgba(100,100,255,0.02)', particleColor: '#8888ff', groundColor: '#8888ff', accentColor: '#8888ff', farLayerContent: 'stars'   },
+  ] as ZoneDef[],
+} as const;
+
+// ── TOURNAMENTS ───────────────────────────────────────────────────────────────
+
+export interface TournamentTemplateDef {
+  id: string;
+  name: string;
+  templateName: string;
+  /** Duration in hours */
+  durationHours: number;
+  /** Join window closes after this many hours from start */
+  joinWindowHours: number;
+  prizeDiamonds: number;
+  entryFeeDiamonds: number;
+  playerCap: number;
+}
+
+export const TOURNAMENT_CONFIG = {
+  /** Leaderboard display limit */
+  leaderboardLimit: 50,
+  
+  /** Local tournament templates (used when DB has no tournaments) */
+  localTemplates: [
+    { id: 'weekly',  name: 'WEEKLY CIRCUIT',  templateName: 'weekly',  durationHours: 168, joinWindowHours: 24, prizeDiamonds: 500, entryFeeDiamonds: 0, playerCap: 128 },
+    { id: 'sprint',  name: '72H SPRINT',      templateName: 'sprint',  durationHours: 72,  joinWindowHours: 6,  prizeDiamonds: 200, entryFeeDiamonds: 0, playerCap: 64  },
+    { id: 'daily',   name: 'DAILY BLITZ',     templateName: 'daily',   durationHours: 24,  joinWindowHours: 2,  prizeDiamonds: 75,  entryFeeDiamonds: 0, playerCap: 32  },
+  ] as TournamentTemplateDef[],
+} as const;
+
+// ── CLANS ─────────────────────────────────────────────────────────────────────
+
+export const CLAN_CONFIG = {
+  /** Minimum clan name length */
+  nameMinLength: 3,
+  /** Maximum clan name length */
+  nameMaxLength: 24,
+  /** Minimum clan tag length */
+  tagMinLength: 2,
+  /** Maximum clan tag length */
+  tagMaxLength: 5,
+  /** Maximum clan description length */
+  descriptionMaxLength: 200,
+  /** Regex pattern for valid clan tags */
+  tagPattern: /^[A-Z0-9]+$/,
+} as const;
+
+// ── LEADERBOARD ───────────────────────────────────────────────────────────────
+
+export const LEADERBOARD_CONFIG = {
+  /** Number of entries to display on leaderboard */
+  displayLimit: 100,
+  /** Number of entries to load from DB */
+  loadLimit: 100,
+} as const;
+
+// ── UI TIMING ─────────────────────────────────────────────────────────────────
+
+export const UI_CONFIG = {
+  /** Duration of enemy hit animation in ms */
+  enemyHitAnimationMs: 180,
+  /** Duration of screen flash on hit in ms */
+  screenFlashMs: 120,
+  /** Duration of stage clear display in ms */
+  stageClearDisplayMs: 500,
+  /** Duration of zone transition display in ms */
+  zoneTransitionMs: 2200,
+  /** Duration of tap ripple effect in ms */
+  rippleEffectMs: 380,
+  /** Maximum damage numbers shown at once */
+  maxDamageNumbers: 12,
+  /** Maximum ripples shown at once */
+  maxRipples: 6,
+  /** Skill bar refresh interval in ms */
+  skillBarRefreshMs: 100,
+  /** Tournament refresh feedback duration in ms */
+  tournamentRefreshMs: 1000,
+  /** Overclock pulse animation interval in ms */
+  overclockPulseMs: 900,
+  /** Milestone stages shown in overclock panel */
+  overclockMilestones: [25, 50, 100, 200] as number[],
+  /** Tier progress denominator (runs per tier) */
+  tierProgressRuns: 3,
+} as const;
 
 export const SET_CATALOG: SetDef[] = [
   {

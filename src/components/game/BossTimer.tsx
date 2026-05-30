@@ -1,6 +1,7 @@
 import React from 'react';
 import type { GameEngine } from '../../engine/Engine';
 import { useGameState } from '../../hooks/useGameState';
+import { ENEMY_CONFIG } from '../../config/game.config';
 
 interface BossTimerProps {
   engine: GameEngine;
@@ -9,7 +10,7 @@ interface BossTimerProps {
 export const BossTimer: React.FC<BossTimerProps> = ({ engine }) => {
   const isBossActive = useGameState(engine, s => s.isBossActive);
   const bossTimeRemaining = useGameState(engine, s => s.bossTimeRemaining);
-  const BOSS_TIMEOUT = 30;
+  const BOSS_TIMEOUT = ENEMY_CONFIG.bossTimeoutSeconds;
 
   if (!isBossActive) return null;
 

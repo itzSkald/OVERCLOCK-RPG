@@ -8,6 +8,7 @@ import type { SkillDef, SkillId } from '../../engine/types';
 import { Tooltip, TooltipLabel, TooltipText, TooltipStat } from './Tooltip';
 import { isBranchSkillUnlocked, BRANCH_SKILL_UNLOCKS } from '../../plugins/OverclockPlugin';
 import type { PerkBranch } from '../../plugins/OverclockPlugin';
+import { UI_CONFIG } from '../../config/game.config';
 
 interface SkillBarProps {
   engine: GameEngine;
@@ -32,7 +33,7 @@ function SkillButton({ skill, engine, isBranch }: { skill: SkillDef; engine: Gam
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 100);
+    const id = setInterval(() => setNow(Date.now()), UI_CONFIG.skillBarRefreshMs);
     return () => clearInterval(id);
   }, []);
 

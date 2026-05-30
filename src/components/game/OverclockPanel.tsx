@@ -14,6 +14,7 @@ import {
   isBranchSkillUnlocked,
 } from '../../plugins/OverclockPlugin';
 import type { OverclockPlugin, PerkBranch } from '../../plugins/OverclockPlugin';
+import { UI_CONFIG, OVERCLOCK_CONFIG } from '../../config/game.config';
 
 interface OverclockPanelProps {
   engine: GameEngine;
@@ -50,7 +51,7 @@ const TIER_COLORS = [
   '#44ddff', '#ffcc00', '#ff44aa', '#88ff44', '#ffffff',
 ];
 
-const MILESTONE_STAGES = [25, 50, 100, 200];
+const MILESTONE_STAGES = UI_CONFIG.overclockMilestones;
 const BRANCHES: PerkBranch[] = ['VOLTAGE', 'SIGNAL', 'THERMAL', 'ENTROPY', 'QUANTUM'];
 
 export const OverclockPanel: React.FC<OverclockPanelProps> = ({ engine }) => {
@@ -73,14 +74,14 @@ export const OverclockPanel: React.FC<OverclockPanelProps> = ({ engine }) => {
   const isMaxTier = overclockTier >= TIER_NAMES.length - 1;
   const tierName = TIER_NAMES[overclockTier] ?? TIER_NAMES[TIER_NAMES.length - 1];
   const tierColor = TIER_COLORS[overclockTier] ?? '#ffffff';
-  const tierProgress = (totalOverclocks % 3) / 3;
+  const tierProgress = (totalOverclocks % UI_CONFIG.tierProgressRuns) / UI_CONFIG.tierProgressRuns;
   const newTierAfterReset = calculateTier(totalOverclocks + 1);
   const tierWillIncrease = newTierAfterReset > overclockTier;
   const nextMilestone = MILESTONE_STAGES.find(s => s > highestStage);
 
   useEffect(() => {
     if (!canOverclock) return;
-    const id = setInterval(() => setPulse(p => !p), 900);
+    const id = setInterval(() => setPulse(p => !p), UI_CONFIG.overclockPulseMs);
     return () => clearInterval(id);
   }, [canOverclock]);
 

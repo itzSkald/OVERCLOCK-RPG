@@ -1,5 +1,6 @@
 import type { IPlugin, IEngine, GameState, GameEvent, Player } from '../engine/types';
 import type { AuthPlugin } from './AuthPlugin';
+import { TOURNAMENT_CONFIG } from '../config/game.config';
 
 export interface Tournament {
   id: string;
@@ -95,8 +96,9 @@ export class TournamentPlugin implements IPlugin {
    */
   private generateLocalTournaments(): Tournament[] {
     const now = Date.now();
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    const dayMs = 24 * 60 * 60 * 1000;
+    const hourMs = 60 * 60 * 1000;
+    const dayMs = 24 * hourMs;
+    const weekMs = 7 * dayMs;
 
     // Weekly tournament — resets every Monday 00:00 UTC
     const dayOfWeek = new Date().getUTCDay(); // 0=Sun
@@ -114,38 +116,74 @@ export class TournamentPlugin implements IPlugin {
     const dayStart = Math.floor(now / dayMs) * dayMs;
     const dayEnd = dayStart + dayMs;
 
-    const templates: Array<{
-      id: string; name: string; template_name: string; bracket_number: number;
-      starts: number; ends: number; joinCloses: number | null;
-      prize: number; cap: number;
-    }> = [
-      { id: 'local-weekly-1',  name: 'WEEKLY CIRCUIT',   template_name: 'weekly',  bracket_number: 1, starts: weekStart,  ends: weekEnd,  joinCloses: weekStart + dayMs,  prize: 500, cap: 128 },
-      { id: 'local-sprint-1',  name: '72H SPRINT',       template_name: 'sprint',  bracket_number: 1, starts: sprintStart, ends: sprintEnd, joinCloses: sprintStart + 6 * 60 * 60 * 1000, prize: 200, cap: 64 },
-      { id: 'local-daily-1',   name: 'DAILY BLITZ',      template_name: 'daily',   bracket_number: 1, starts: dayStart,   ends: dayEnd,   joinCloses: dayStart + 2 * 60 * 60 * 1000,   prize: 75,  cap: 32 },
-      // Upcoming next week
-      { id: 'local-weekly-2',  name: 'WEEKLY CIRCUIT II', template_name: 'weekly', bracket_number: 2, starts: weekEnd,    ends: weekEnd + weekMs, joinCloses: null, prize: 500, cap: 128 },
-      { id: 'local-sprint-2',  name: '72H SPRINT II',    template_name: 'sprint',  bracket_number: 2, starts: sprintEnd,  ends: sprintEnd + 3 * dayMs, joinCloses: null, prize: 200, cap: 64 },
-    ];
+    // Build tournaments from config templates
+    const templates = TOURNAMENT_CONFIG.localTemplates;
+    const results: Tournament[] = [];
 
-    return templates.map(t => {
+    for (const template of templates) {
+      let starts: number, ends: number, joinCloses: number | null;
+      
+      switch (template.templateName) {
+        case 'weekly':
+          starts = weekStart;
+          ends = weekEnd;
+          joinCloses = weekStart + (template.joinWindowHours * hourMs);
+          break;
+        case 'sprint':
+          starts = sprintStart;
+          ends = sprintEnd;
+          joinCloses = sprintStart + (template.joinWindowHours * hourMs);
+          break;
+        case 'daily':
+          starts = dayStart;
+          ends = dayEnd;
+          joinCloses = dayStart + (template.joinWindowHours * hourMs);
+          break;
+        default:
+          continue;
+      }
+
       const status: Tournament['status'] =
-        now >= t.starts && now < t.ends ? 'active' :
-        now < t.starts ? 'upcoming' : 'ended';
+        now >= starts && now < ends ? 'active' :
+        now < starts ? 'upcoming' : 'ended';
 
-      return {
-        id: t.id,
-        name: t.name,
-        template_name: t.template_name,
-        bracket_number: t.bracket_number,
-        starts_at: new Date(t.starts).toISOString(),
-        ends_at: new Date(t.ends).toISOString(),
-        join_closes_at: t.joinCloses ? new Date(t.joinCloses).toISOString() : null,
-        prize_diamonds: t.prize,
-        entry_fee_diamonds: 0,
-        player_cap: t.cap,
-        status,
-      };
-    }).filter(t => t.status !== 'ended');
+      if (status !== 'ended') {
+        results.push({
+          id: `local-${template.id}-1`,
+          name: template.name,
+          template_name: template.templateName,
+          bracket_number: 1,
+          starts_at: new Date(starts).toISOString(),
+          ends_at: new Date(ends).toISOString(),
+          join_closes_at: joinCloses ? new Date(joinCloses).toISOString() : null,
+          prize_diamonds: template.prizeDiamonds,
+          entry_fee_diamonds: template.entryFeeDiamonds,
+          player_cap: template.playerCap,
+          status,
+        });
+      }
+
+      // Add upcoming next bracket for weekly/sprint
+      if (template.templateName === 'weekly' || template.templateName === 'sprint') {
+        const nextStarts = template.templateName === 'weekly' ? weekEnd : sprintEnd;
+        const nextEnds = template.templateName === 'weekly' ? weekEnd + weekMs : sprintEnd + 3 * dayMs;
+        results.push({
+          id: `local-${template.id}-2`,
+          name: `${template.name} II`,
+          template_name: template.templateName,
+          bracket_number: 2,
+          starts_at: new Date(nextStarts).toISOString(),
+          ends_at: new Date(nextEnds).toISOString(),
+          join_closes_at: null,
+          prize_diamonds: template.prizeDiamonds,
+          entry_fee_diamonds: template.entryFeeDiamonds,
+          player_cap: template.playerCap,
+          status: 'upcoming',
+        });
+      }
+    }
+
+    return results;
   }
 
   private async loadMyEntries(): Promise<void> {
@@ -171,7 +209,7 @@ export class TournamentPlugin implements IPlugin {
     if (this.isLocalTournament(tournamentId)) {
       // Local tournaments: leaderboard is in-memory only
       const existing = this.leaderboards[tournamentId] ?? [];
-      const sorted = [...existing].sort((a, b) => b.score - a.score).slice(0, 50);
+      const sorted = [...existing].sort((a, b) => b.score - a.score).slice(0, TOURNAMENT_CONFIG.leaderboardLimit);
       this.leaderboards[tournamentId] = sorted;
       this.participantCounts[tournamentId] = sorted.length;
       return;
@@ -181,7 +219,7 @@ export class TournamentPlugin implements IPlugin {
       { tournament_id: tournamentId },
       'id, user_id, handle, score, rank, joined_at, start_max_stage'
     );
-    const sorted = data.sort((a, b) => b.score - a.score).slice(0, 50);
+    const sorted = data.sort((a, b) => b.score - a.score).slice(0, TOURNAMENT_CONFIG.leaderboardLimit);
     this.leaderboards[tournamentId] = sorted;
     this.participantCounts[tournamentId] = data.length;
   }

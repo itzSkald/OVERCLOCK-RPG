@@ -1,136 +1,17 @@
 import React, { useMemo } from 'react';
+import { ZONE_CONFIG, type ZoneDef } from '../../config/game.config';
 
 export type ZoneId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-export interface ZoneConfig {
-  id: ZoneId;
-  name: string;
-  label: string;
-  bgColor: string;
-  gridColor: string;
-  particleColor: string;
-  groundColor: string;
-  accentColor: string;
-  farLayerContent: 'hex' | 'bars' | 'traces' | 'racks' | 'void' | 'glitch' | 'fractal' | 'static' | 'overload' | 'stars';
-}
+// Re-export ZoneDef as ZoneConfig for compatibility
+export type ZoneConfig = ZoneDef;
 
-// Each zone spans 500 stages (1-500, 501-1000, …, 4501-5000)
-export const ZONES: ZoneConfig[] = [
-  {
-    id: 0,
-    name: 'PERIMETER',
-    label: 'ZONE 0: PERIMETER',
-    bgColor: '#0a0a0f',
-    gridColor: 'rgba(0,245,255,0.04)',
-    particleColor: '#00f5ff',
-    groundColor: '#00f5ff',
-    accentColor: '#00f5ff',
-    farLayerContent: 'hex',
-  },
-  {
-    id: 1,
-    name: 'FIREWALL',
-    label: 'ZONE 1: FIREWALL',
-    bgColor: '#0f0808',
-    gridColor: 'rgba(255,34,34,0.05)',
-    particleColor: '#ff2222',
-    groundColor: '#ff0080',
-    accentColor: '#ff2222',
-    farLayerContent: 'bars',
-  },
-  {
-    id: 2,
-    name: 'KERNEL',
-    label: 'ZONE 2: KERNEL',
-    bgColor: '#080f08',
-    gridColor: 'rgba(57,255,20,0.04)',
-    particleColor: '#39ff14',
-    groundColor: '#39ff14',
-    accentColor: '#39ff14',
-    farLayerContent: 'traces',
-  },
-  {
-    id: 3,
-    name: 'CORE',
-    label: 'ZONE 3: CORE',
-    bgColor: '#0f0c06',
-    gridColor: 'rgba(255,170,0,0.04)',
-    particleColor: '#ffaa00',
-    groundColor: '#ffaa00',
-    accentColor: '#ffaa00',
-    farLayerContent: 'racks',
-  },
-  {
-    id: 4,
-    name: 'THE VOID',
-    label: 'ZONE 4: THE VOID',
-    bgColor: '#050508',
-    gridColor: 'rgba(200,200,255,0.02)',
-    particleColor: '#ffffff',
-    groundColor: '#ffffff',
-    accentColor: '#ffffff',
-    farLayerContent: 'void',
-  },
-  {
-    id: 5,
-    name: 'ABYSS',
-    label: 'ZONE 5: ABYSS',
-    bgColor: '#0d0208',
-    gridColor: 'rgba(255,0,128,0.04)',
-    particleColor: '#ff0080',
-    groundColor: '#cc0066',
-    accentColor: '#ff0080',
-    farLayerContent: 'glitch',
-  },
-  {
-    id: 6,
-    name: 'FRACTAL',
-    label: 'ZONE 6: FRACTAL',
-    bgColor: '#060c10',
-    gridColor: 'rgba(0,200,255,0.03)',
-    particleColor: '#00ccff',
-    groundColor: '#ffaa00',
-    accentColor: '#00ccff',
-    farLayerContent: 'fractal',
-  },
-  {
-    id: 7,
-    name: 'ENTROPY',
-    label: 'ZONE 7: ENTROPY',
-    bgColor: '#060a06',
-    gridColor: 'rgba(80,180,80,0.03)',
-    particleColor: '#50b450',
-    groundColor: '#50b450',
-    accentColor: '#50b450',
-    farLayerContent: 'static',
-  },
-  {
-    id: 8,
-    name: 'SINGULARITY',
-    label: 'ZONE 8: SINGULARITY',
-    bgColor: '#0f0f0f',
-    gridColor: 'rgba(255,255,255,0.06)',
-    particleColor: '#ffffff',
-    groundColor: '#ffffff',
-    accentColor: '#ffff80',
-    farLayerContent: 'overload',
-  },
-  {
-    id: 9,
-    name: 'BEYOND',
-    label: 'ZONE 9: BEYOND',
-    bgColor: '#010104',
-    gridColor: 'rgba(180,180,255,0.01)',
-    particleColor: '#aaaaff',
-    groundColor: '#aaaaff',
-    accentColor: '#aaaaff',
-    farLayerContent: 'stars',
-  },
-];
+// Get zones from config
+const ZONES: ZoneConfig[] = ZONE_CONFIG.zones as ZoneConfig[];
 
-// Zones span 500 stages each: zone 0 = stages 1-500, zone 1 = 501-1000, etc.
+// Zones span stagesPerZone stages each: zone 0 = stages 1-500, zone 1 = 501-1000, etc.
 export function getZone(stage: number): ZoneConfig {
-  const idx = Math.min(Math.floor((stage - 1) / 500), ZONES.length - 1);
+  const idx = Math.min(Math.floor((stage - 1) / ZONE_CONFIG.stagesPerZone), ZONES.length - 1);
   return ZONES[idx];
 }
 

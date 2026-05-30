@@ -209,20 +209,63 @@ export class DailyPlugin implements IPlugin {
   }
 
   private async loadOrGenerateChallenges(): Promise<void> {
-    if (!this.userId) return;
+    if (!this.userId) {
+      console.log('[v0] DailyPlugin: No userId, skipping loadOrGenerateChallenges');
+      return;
+    }
 
     const today = getLondonDateString();
-    const { data } = await this.engine.storage.loadMany('daily_challenges', {
+    
+    // Try to load from DB first
+    const { data, error } = await this.engine.storage.loadMany('daily_challenges', {
       user_id: this.userId,
       challenge_date: today,
     });
 
+    if (error) {
+      console.log('[v0] DailyPlugin: DB error, generating local challenges:', error);
+      this.generateLocalChallenges(today);
+      this.notify();
+      return;
+    }
+
     if (data && data.length >= DAILY_CONFIG.challengesPerDay) {
       this.challenges = data as DailyChallenge[];
+    } else if (data && data.length > 0) {
+      // Has some but not enough - use what we have plus generate more locally
+      this.challenges = data as DailyChallenge[];
     } else {
+      // No data - try to insert to DB, fall back to local
       await this.generateChallenges(today);
     }
     this.notify();
+  }
+
+  /**
+   * Generate challenges locally in memory (no DB).
+   * Used as fallback when DB is unavailable.
+   */
+  private generateLocalChallenges(date: string): void {
+    const stage = this.engine.state.highestStage ?? 1;
+    const seed = dateSeed(date + (this.userId?.slice(0, 8) ?? 'anon'));
+    const shuffled = seededShuffle(CHALLENGE_TEMPLATES, seed);
+    const selected = shuffled.slice(0, DAILY_CONFIG.challengesPerDay);
+
+    this.challenges = selected.map((template, idx) => {
+      const target = template.targetFn(stage);
+      const reward = template.rewardFn(stage);
+      const label = template.label.replace('{n}', target.toString());
+      return {
+        id: `local-${date}-${idx}`,
+        challenge_type: template.type,
+        challenge_label: label,
+        target_value: target,
+        current_value: 0,
+        completed: false,
+        reward_gold: reward,
+        challenge_date: date,
+      };
+    });
   }
 
   private async generateChallenges(date: string): Promise<void> {
@@ -234,25 +277,46 @@ export class DailyPlugin implements IPlugin {
     const selected = shuffled.slice(0, DAILY_CONFIG.challengesPerDay);
 
     this.challenges = [];
-    for (const template of selected) {
+    let dbFailed = false;
+
+    for (let idx = 0; idx < selected.length; idx++) {
+      const template = selected[idx];
       const target = template.targetFn(stage);
       const reward = template.rewardFn(stage);
       const label = template.label.replace('{n}', target.toString());
 
-      const { data } = await this.engine.storage.insert('daily_challenges', {
-        user_id: this.userId,
-        challenge_date: date,
+      if (!dbFailed) {
+        const { data, error } = await this.engine.storage.insert('daily_challenges', {
+          user_id: this.userId,
+          challenge_date: date,
+          challenge_type: template.type,
+          challenge_label: label,
+          target_value: target,
+          current_value: 0,
+          completed: false,
+          reward_gold: reward,
+        }, 'id, challenge_type, challenge_label, target_value, current_value, completed, reward_gold, challenge_date');
+
+        if (error) {
+          console.log('[v0] DailyPlugin: DB insert failed, switching to local mode');
+          dbFailed = true;
+        } else if (data) {
+          this.challenges.push(data as DailyChallenge);
+          continue;
+        }
+      }
+
+      // Fallback: create local challenge
+      this.challenges.push({
+        id: `local-${date}-${idx}`,
         challenge_type: template.type,
         challenge_label: label,
         target_value: target,
         current_value: 0,
         completed: false,
         reward_gold: reward,
-      }, 'id, challenge_type, challenge_label, target_value, current_value, completed, reward_gold, challenge_date');
-
-      if (data) {
-        this.challenges.push(data as DailyChallenge);
-      }
+        challenge_date: date,
+      });
     }
   }
 
@@ -301,6 +365,9 @@ export class DailyPlugin implements IPlugin {
   }
 
   private async saveProgress(challenge: DailyChallenge): Promise<void> {
+    // Skip DB save for local challenges
+    if (challenge.id.startsWith('local-')) return;
+    
     await this.engine.storage.save('daily_challenges', {
       id: challenge.id,
       current_value: challenge.current_value,

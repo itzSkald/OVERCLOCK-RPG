@@ -10,6 +10,7 @@ import { ZoneScene, getZone } from './ZoneScene';
 import type { ZoneConfig } from './ZoneScene';
 import type { TapPlugin } from '../../plugins/TapPlugin';
 import type { EnemyPlugin } from '../../plugins/EnemyPlugin';
+import { UI_CONFIG, ENEMY_CONFIG } from '../../config/game.config';
 
 interface BattlefieldProps {
   engine: GameEngine;
@@ -51,14 +52,14 @@ export const Battlefield: React.FC<BattlefieldProps> = ({ engine }) => {
   useEffect(() => {
     const unsub1 = engine.on<DamageNumberEvent>('damage_number', event => {
       if (event.payload.type === 'idle') return;
-      setDamageNumbers(prev => [...prev.slice(-12), event.payload]);
+      setDamageNumbers(prev => [...prev.slice(-(UI_CONFIG.maxDamageNumbers - 1)), event.payload]);
     });
 
     const unsub2 = engine.on('enemy_hit', () => {
       setIsHit(true);
       setScreenFlash(true);
-      setTimeout(() => setIsHit(false), 180);
-      setTimeout(() => setScreenFlash(false), 120);
+      setTimeout(() => setIsHit(false), UI_CONFIG.enemyHitAnimationMs);
+      setTimeout(() => setScreenFlash(false), UI_CONFIG.screenFlashMs);
     });
 
     const unsub3 = engine.on<{ stage: number }>('stage_clear', event => {
@@ -69,13 +70,13 @@ export const Battlefield: React.FC<BattlefieldProps> = ({ engine }) => {
       setTimeout(() => {
         setIsDying(false);
         setShowStageClear(false);
-      }, 500);
+      }, UI_CONFIG.stageClearDisplayMs);
     });
 
     const unsub4 = engine.on<{ zone: ZoneConfig }>('zone_changed', event => {
       setZoneTransitionLabel(event.payload.zone.label);
       setShowZoneTransition(true);
-      setTimeout(() => setShowZoneTransition(false), 2200);
+      setTimeout(() => setShowZoneTransition(false), UI_CONFIG.zoneTransitionMs);
     });
 
     return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
@@ -96,8 +97,8 @@ export const Battlefield: React.FC<BattlefieldProps> = ({ engine }) => {
     // Spawn ripple at tap position
     const rippleId = `r_${Date.now()}_${Math.random()}`;
     const currentZone = getZone(engine.state.stage ?? 1);
-    setRipples(prev => [...prev.slice(-6), { id: rippleId, x, y, color: currentZone.accentColor }]);
-    setTimeout(() => setRipples(prev => prev.filter(r => r.id !== rippleId)), 380);
+    setRipples(prev => [...prev.slice(-(UI_CONFIG.maxRipples - 1)), { id: rippleId, x, y, color: currentZone.accentColor }]);
+    setTimeout(() => setRipples(prev => prev.filter(r => r.id !== rippleId)), UI_CONFIG.rippleEffectMs);
 
     const tapPlugin = engine.getPlugin<TapPlugin>('tap');
     tapPlugin?.tap(x, y);
@@ -114,7 +115,7 @@ export const Battlefield: React.FC<BattlefieldProps> = ({ engine }) => {
 
   const hpPct = enemy ? Math.max(0, (enemy.hp / enemy.maxHp) * 100) : 0;
   const isBoss = enemy?.isBoss ?? false;
-  const isBossStage = (stage ?? 1) % 10 === 0;
+  const isBossStage = (stage ?? 1) % ENEMY_CONFIG.bossEveryNStages === 0;
 
   return (
     <div

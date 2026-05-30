@@ -1,14 +1,6 @@
 import type { IPlugin, IEngine, GameState, GameEvent, Player } from '../engine/types';
 import type { AuthPlugin } from './AuthPlugin';
-
-export interface AchievementDef {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  color: string;
-  check: (state: GameState, ctx: AchievementContext) => boolean;
-}
+import { ACHIEVEMENT_CONFIG, type AchievementDef } from '../config/game.config';
 
 export interface UnlockedAchievement {
   achievement_id: string;
@@ -22,381 +14,62 @@ interface AchievementContext {
   totalGoldEarned: number;
 }
 
-export const ACHIEVEMENT_DEFS: AchievementDef[] = [
-  // ── Kill Milestones ───────────────────────────────────────────────
-  {
-    id: 'first_blood',
-    name: 'FIRST BLOOD',
-    description: 'Defeat your first enemy',
-    icon: 'Crosshair',
-    color: '#00f5ff',
-    check: (_s, ctx) => ctx.totalKills >= 1,
-  },
-  {
-    id: 'kill_100',
-    name: 'CENTURION',
-    description: 'Defeat 100 enemies',
-    icon: 'Target',
-    color: '#39ff14',
-    check: (_s, ctx) => ctx.totalKills >= 100,
-  },
-  {
-    id: 'kill_500',
-    name: 'KILL STREAK',
-    description: 'Defeat 500 enemies',
-    icon: 'Target',
-    color: '#39ff14',
-    check: (_s, ctx) => ctx.totalKills >= 500,
-  },
-  {
-    id: 'kill_1000',
-    name: 'MASS DELETION',
-    description: 'Defeat 1,000 enemies',
-    icon: 'Target',
-    color: '#ffaa00',
-    check: (_s, ctx) => ctx.totalKills >= 1000,
-  },
-  {
-    id: 'kill_5000',
-    name: 'EXTINCTION EVENT',
-    description: 'Defeat 5,000 enemies',
-    icon: 'Target',
-    color: '#ff4444',
-    check: (_s, ctx) => ctx.totalKills >= 5000,
-  },
-  {
-    id: 'kill_10000',
-    name: 'THE PURGE',
-    description: 'Defeat 10,000 enemies',
-    icon: 'Target',
-    color: '#ff0080',
-    check: (_s, ctx) => ctx.totalKills >= 10000,
-  },
+/**
+ * Build check function from config-based achievement definition.
+ * This converts the declarative config into runtime check functions.
+ */
+function buildCheckFn(def: AchievementDef): (state: GameState, ctx: AchievementContext) => boolean {
+  switch (def.type) {
+    case 'kills':
+      return (_s, ctx) => ctx.totalKills >= def.threshold;
+    case 'boss_kills':
+      return (_s, ctx) => ctx.totalBossKills >= def.threshold;
+    case 'stage':
+      return (s) => (s.highestStage ?? 0) >= def.threshold;
+    case 'overclocks':
+      return (s) => (s.totalOverclocks ?? 0) >= def.threshold;
+    case 'gold':
+      return (_s, ctx) => ctx.totalGoldEarned >= def.threshold;
+    case 'skills':
+      return (_s, ctx) => ctx.totalSkillsUsed >= def.threshold;
+    case 'components_unlocked':
+      return (s) => Object.values(s.components ?? {}).filter(c => c.unlocked).length >= def.threshold;
+    case 'component_level':
+      return (s) => Object.values(s.components ?? {}).some(c => c.level >= def.threshold);
+    case 'items_equipped':
+      return (s) => {
+        const slots = s.equippedItems;
+        if (!slots) return false;
+        const count = Object.values(slots).reduce((sum, arr) => {
+          if (!Array.isArray(arr)) return sum;
+          return sum + arr.filter(item => item !== null).length;
+        }, 0);
+        return count >= def.threshold;
+      };
+    case 'set_complete':
+      return (s) => {
+        if (!def.setId) return false;
+        return (s.completedSets ?? []).includes(def.setId);
+      };
+    case 'oct_spent':
+      return (s) => (s.octSpent ?? 0) >= def.threshold;
+    case 'diamonds':
+      return (s) => (s.diamonds ?? 0) >= def.threshold;
+    default:
+      return () => false;
+  }
+}
 
-  // ── Boss Kills ───────────────────────────────────────────────────
-  {
-    id: 'boss_slayer',
-    name: 'BOSS SLAYER',
-    description: 'Defeat 10 bosses',
-    icon: 'Skull',
-    color: '#ff4444',
-    check: (_s, ctx) => ctx.totalBossKills >= 10,
-  },
-  {
-    id: 'boss_slayer_50',
-    name: 'APEX PREDATOR',
-    description: 'Defeat 50 bosses',
-    icon: 'Skull',
-    color: '#ff4444',
-    check: (_s, ctx) => ctx.totalBossKills >= 50,
-  },
-  {
-    id: 'boss_slayer_100',
-    name: 'BOSS HUNTER',
-    description: 'Defeat 100 bosses',
-    icon: 'Skull',
-    color: '#ff2200',
-    check: (_s, ctx) => ctx.totalBossKills >= 100,
-  },
-  {
-    id: 'boss_slayer_500',
-    name: 'OVERLORD KILLER',
-    description: 'Defeat 500 bosses',
-    icon: 'Skull',
-    color: '#dd0000',
-    check: (_s, ctx) => ctx.totalBossKills >= 500,
-  },
+/** Runtime achievement with check function built from config */
+interface RuntimeAchievement extends AchievementDef {
+  check: (state: GameState, ctx: AchievementContext) => boolean;
+}
 
-  // ── Stage Milestones ─────────────────────────────────────────────
-  {
-    id: 'stage_10',
-    name: 'WARMING UP',
-    description: 'Reach stage 10',
-    icon: 'TrendingUp',
-    color: '#00f5ff',
-    check: s => s.highestStage >= 10,
-  },
-  {
-    id: 'stage_25',
-    name: 'MID GAME',
-    description: 'Reach stage 25',
-    icon: 'TrendingUp',
-    color: '#39ff14',
-    check: s => s.highestStage >= 25,
-  },
-  {
-    id: 'stage_50',
-    name: 'DEEP RUN',
-    description: 'Reach stage 50',
-    icon: 'TrendingUp',
-    color: '#ffaa00',
-    check: s => s.highestStage >= 50,
-  },
-  {
-    id: 'stage_100',
-    name: 'ENDGAME',
-    description: 'Reach stage 100',
-    icon: 'TrendingUp',
-    color: '#ff0080',
-    check: s => s.highestStage >= 100,
-  },
-  {
-    id: 'stage_200',
-    name: 'GOING DEEPER',
-    description: 'Reach stage 200',
-    icon: 'TrendingUp',
-    color: '#ff0080',
-    check: s => s.highestStage >= 200,
-  },
-  {
-    id: 'stage_500',
-    name: 'HALF A THOUSAND',
-    description: 'Reach stage 500',
-    icon: 'TrendingUp',
-    color: '#ff4444',
-    check: s => s.highestStage >= 500,
-  },
-  {
-    id: 'stage_1000',
-    name: 'FOUR DIGITS',
-    description: 'Reach stage 1,000',
-    icon: 'TrendingUp',
-    color: '#ff2200',
-    check: s => s.highestStage >= 1000,
-  },
-  {
-    id: 'stage_2500',
-    name: 'BEYOND THE VOID',
-    description: 'Reach stage 2,500',
-    icon: 'TrendingUp',
-    color: '#dd0000',
-    check: s => s.highestStage >= 2500,
-  },
-  {
-    id: 'stage_5000',
-    name: 'THE FINAL STAGE',
-    description: 'Reach stage 5,000',
-    icon: 'TrendingUp',
-    color: '#aa0000',
-    check: s => s.highestStage >= 5000,
-  },
-
-  // ── Overclock Milestones ─────────────────────────────────────────
-  {
-    id: 'first_overclock',
-    name: 'REBOOT',
-    description: 'Perform your first Overclock',
-    icon: 'RotateCcw',
-    color: '#00f5ff',
-    check: s => s.totalOverclocks >= 1,
-  },
-  {
-    id: 'overclock_5',
-    name: 'SERIAL OVERCLOCKER',
-    description: 'Perform 5 Overclocks',
-    icon: 'RotateCcw',
-    color: '#39ff14',
-    check: s => s.totalOverclocks >= 5,
-  },
-  {
-    id: 'overclock_10',
-    name: 'LOOP MASTER',
-    description: 'Perform 10 Overclocks',
-    icon: 'RotateCcw',
-    color: '#ffaa00',
-    check: s => s.totalOverclocks >= 10,
-  },
-  {
-    id: 'overclock_25',
-    name: 'INFINITE REGRESS',
-    description: 'Perform 25 Overclocks',
-    icon: 'RotateCcw',
-    color: '#ff4444',
-    check: s => s.totalOverclocks >= 25,
-  },
-  {
-    id: 'overclock_50',
-    name: 'RESET GOD',
-    description: 'Perform 50 Overclocks',
-    icon: 'RotateCcw',
-    color: '#ff0080',
-    check: s => s.totalOverclocks >= 50,
-  },
-  {
-    id: 'overclock_100',
-    name: 'THE ETERNAL LOOP',
-    description: 'Perform 100 Overclocks',
-    icon: 'RotateCcw',
-    color: '#dd0000',
-    check: s => s.totalOverclocks >= 100,
-  },
-
-  // ── Gold Milestones ──────────────────────────────────────────────
-  {
-    id: 'gold_hoarder',
-    name: 'GOLD HOARDER',
-    description: 'Earn 10,000 total gold',
-    icon: 'Coins',
-    color: '#ffaa00',
-    check: (_s, ctx) => ctx.totalGoldEarned >= 10000,
-  },
-  {
-    id: 'gold_100k',
-    name: 'FILTHY RICH',
-    description: 'Earn 100,000 total gold',
-    icon: 'Coins',
-    color: '#ffaa00',
-    check: (_s, ctx) => ctx.totalGoldEarned >= 100000,
-  },
-  {
-    id: 'gold_1m',
-    name: 'MILLIONAIRE',
-    description: 'Earn 1,000,000 total gold',
-    icon: 'Coins',
-    color: '#ffcc00',
-    check: (_s, ctx) => ctx.totalGoldEarned >= 1000000,
-  },
-  {
-    id: 'gold_1b',
-    name: 'GOLD BARON',
-    description: 'Earn 1,000,000,000 total gold',
-    icon: 'Coins',
-    color: '#ff8800',
-    check: (_s, ctx) => ctx.totalGoldEarned >= 1000000000,
-  },
-  {
-    id: 'gold_1t',
-    name: 'INFINITE WEALTH',
-    description: 'Earn 1 trillion total gold',
-    icon: 'Coins',
-    color: '#ff4400',
-    check: (_s, ctx) => ctx.totalGoldEarned >= 1000000000000,
-  },
-
-  // ── Skill Milestones ─────────────────────────────────────────────
-  {
-    id: 'skill_master',
-    name: 'SKILL MASTER',
-    description: 'Use skills 50 times',
-    icon: 'Zap',
-    color: '#00f5ff',
-    check: (_s, ctx) => ctx.totalSkillsUsed >= 50,
-  },
-  {
-    id: 'skill_200',
-    name: 'ABILITY ADDICT',
-    description: 'Use skills 200 times',
-    icon: 'Zap',
-    color: '#39ff14',
-    check: (_s, ctx) => ctx.totalSkillsUsed >= 200,
-  },
-  {
-    id: 'skill_500',
-    name: 'POWER JUNKIE',
-    description: 'Use skills 500 times',
-    icon: 'Zap',
-    color: '#ffaa00',
-    check: (_s, ctx) => ctx.totalSkillsUsed >= 500,
-  },
-
-  // ── Equipment & Motherboard ──────────────────────────────────────
-  {
-    id: 'full_equipped',
-    name: 'FULLY LOADED',
-    description: 'Fill all motherboard slots',
-    icon: 'HardDrive',
-    color: '#39ff14',
-    check: s => {
-      const slots = s.equippedItems;
-      if (!slots) return false;
-      return Object.values(slots).every(arr =>
-        Array.isArray(arr) && arr.length > 0 && arr.every(item => item !== null)
-      );
-    },
-  },
-  {
-    id: 'first_legendary',
-    name: 'LEGENDARY FIND',
-    description: 'Equip a Legendary item',
-    icon: 'Star',
-    color: '#ffcc00',
-    check: s => {
-      const slots = s.equippedItems;
-      if (!slots) return false;
-      return Object.values(slots).some(arr =>
-        Array.isArray(arr) && arr.some(item => item?.rarity === 'Legendary')
-      );
-    },
-  },
-  {
-    id: 'item_hoarder',
-    name: 'HARDWARE JUNKIE',
-    description: 'Collect 40 items',
-    icon: 'Package',
-    color: '#ffaa00',
-    check: s => (s.inventory?.length ?? 0) >= 40,
-  },
-  {
-    id: 'silicon_ghost_board',
-    name: 'SILICON BOARD',
-    description: 'Upgrade to the Silicon Ghost motherboard',
-    icon: 'Cpu',
-    color: '#39ff14',
-    check: s => (s.motherboardTier ?? 0) >= 4,
-  },
-  {
-    id: 'omega_rig',
-    name: 'OMEGA RIG',
-    description: 'Upgrade to the Omega Rig motherboard',
-    icon: 'Cpu',
-    color: '#ffaa00',
-    check: s => (s.motherboardTier ?? 0) >= 7,
-  },
-
-  // ── Component Milestones ─────────────────────────────────────────
-  {
-    id: 'first_module',
-    name: 'FIRST MODULE',
-    description: 'Purchase your first component level',
-    icon: 'Package',
-    color: '#00f5ff',
-    check: s => Object.values(s.components ?? {}).some(c => c.level >= 1),
-  },
-  {
-    id: 'all_modules',
-    name: 'FULL ARSENAL',
-    description: 'Unlock all 10 components',
-    icon: 'Package',
-    color: '#39ff14',
-    check: s => Object.values(s.components ?? {}).filter(c => c.unlocked).length >= 10,
-  },
-  {
-    id: 'max_module',
-    name: 'MAXED OUT',
-    description: 'Level any component to 100',
-    icon: 'Package',
-    color: '#ff0080',
-    check: s => Object.values(s.components ?? {}).some(c => c.level >= 100),
-  },
-
-  // ── Prestige / Quantum tier ──────────────────────────────────────
-  {
-    id: 'quantum_fork',
-    name: 'QUANTUM FORK',
-    description: 'Reach Overclock tier 6 (QUANTUM FORK)',
-    icon: 'GitBranch',
-    color: '#cc44ff',
-    check: s => (s.overclockTier ?? 0) >= 6,
-  },
-  {
-    id: 'the_singularity',
-    name: 'THE SINGULARITY',
-    description: 'Reach Overclock tier 9',
-    icon: 'Infinity',
-    color: '#8800bb',
-    check: s => (s.overclockTier ?? 0) >= 9,
-  },
-];
+/** Build runtime achievements from config */
+const RUNTIME_ACHIEVEMENTS: RuntimeAchievement[] = ACHIEVEMENT_CONFIG.achievements.map(def => ({
+  ...def,
+  check: buildCheckFn(def),
+}));
 
 interface AchievementStatsRow {
   user_id: string;
@@ -470,8 +143,8 @@ export class AchievementPlugin implements IPlugin {
     );
 
     this.checkTimer = setInterval(() => this.checkAchievements(), 2000);
-    // Persist stats every 30 seconds
-    this.saveStatsTimer = setInterval(() => void this.saveStats(), 30000);
+    // Persist stats at configured interval
+    this.saveStatsTimer = setInterval(() => void this.saveStats(), ACHIEVEMENT_CONFIG.persistIntervalMs);
   }
 
   private async loadAchievements(): Promise<void> {
@@ -519,7 +192,7 @@ export class AchievementPlugin implements IPlugin {
     if (!this.userId) return;
 
     const state = this.engine.state;
-    for (const def of ACHIEVEMENT_DEFS) {
+    for (const def of RUNTIME_ACHIEVEMENTS) {
       if (this.unlocked.has(def.id)) continue;
       if (def.check(state, this.ctx)) {
         this.unlock(def);
@@ -527,7 +200,7 @@ export class AchievementPlugin implements IPlugin {
     }
   }
 
-  private unlock(def: AchievementDef): void {
+  private unlock(def: RuntimeAchievement): void {
     if (this.unlocked.has(def.id)) return;
 
     this.unlocked.add(def.id);
@@ -557,7 +230,12 @@ export class AchievementPlugin implements IPlugin {
   }
 
   getProgress(): { total: number; unlocked: number } {
-    return { total: ACHIEVEMENT_DEFS.length, unlocked: this.unlocked.size };
+    return { total: RUNTIME_ACHIEVEMENTS.length, unlocked: this.unlocked.size };
+  }
+
+  /** Get all achievement definitions (for UI) */
+  getDefinitions(): AchievementDef[] {
+    return ACHIEVEMENT_CONFIG.achievements;
   }
 
   subscribe(listener: () => void): () => void {

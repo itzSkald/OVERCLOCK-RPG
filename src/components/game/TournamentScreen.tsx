@@ -3,6 +3,7 @@ import { X, Trophy, Users, Clock, RefreshCw, Swords, Lock, ChevronRight, Diamond
 import type { GameEngine } from '../../engine/Engine';
 import { useGameState } from '../../hooks/useGameState';
 import type { TournamentPlugin, Tournament, TournamentEntry } from '../../plugins/TournamentPlugin';
+import { UI_CONFIG } from '../../config/game.config';
 
 interface TournamentScreenProps {
   engine: GameEngine;
@@ -206,7 +207,7 @@ function TournamentDetail({
   const handleRefresh = () => {
     setRefreshing(true);
     onRefresh();
-    setTimeout(() => setRefreshing(false), 1000);
+    setTimeout(() => setRefreshing(false), UI_CONFIG.tournamentRefreshMs);
   };
 
   return (

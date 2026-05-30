@@ -1,5 +1,6 @@
 import type { IPlugin, IEngine, GameState, GameEvent, Player } from '../engine/types';
 import type { AuthPlugin } from './AuthPlugin';
+import { CLAN_CONFIG } from '../config/game.config';
 
 export interface Clan {
   id: string;
@@ -228,13 +229,13 @@ export class ClanPlugin implements IPlugin {
     const trimmedName = name.trim();
     const trimmedTag = tag.trim().toUpperCase();
 
-    if (trimmedName.length < 3 || trimmedName.length > 24) {
-      return { success: false, error: 'Name must be 3-24 characters' };
+    if (trimmedName.length < CLAN_CONFIG.nameMinLength || trimmedName.length > CLAN_CONFIG.nameMaxLength) {
+      return { success: false, error: `Name must be ${CLAN_CONFIG.nameMinLength}-${CLAN_CONFIG.nameMaxLength} characters` };
     }
-    if (trimmedTag.length < 2 || trimmedTag.length > 5) {
-      return { success: false, error: 'Tag must be 2-5 characters' };
+    if (trimmedTag.length < CLAN_CONFIG.tagMinLength || trimmedTag.length > CLAN_CONFIG.tagMaxLength) {
+      return { success: false, error: `Tag must be ${CLAN_CONFIG.tagMinLength}-${CLAN_CONFIG.tagMaxLength} characters` };
     }
-    if (!/^[A-Z0-9]+$/.test(trimmedTag)) {
+    if (!CLAN_CONFIG.tagPattern.test(trimmedTag)) {
       return { success: false, error: 'Tag must be alphanumeric' };
     }
 
@@ -243,7 +244,7 @@ export class ClanPlugin implements IPlugin {
       {
         name: trimmedName,
         tag: trimmedTag,
-        description: description.trim().slice(0, 200),
+        description: description.trim().slice(0, CLAN_CONFIG.descriptionMaxLength),
         owner_id: this.userId,
         member_count: 1,
         total_stage: this.engine.state.highestStage,

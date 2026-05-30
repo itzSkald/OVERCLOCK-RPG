@@ -158,11 +158,9 @@ export class AuthPlugin implements IPlugin {
       return { error: null, needsConfirmation: true };
     }
 
-    // Confirmation not required — sign in immediately
-    const { error: signInError } = await auth.signIn(email, password);
-    if (signInError) return { error: signInError };
-
-    return { error: null };
+    // Registration succeeded — do NOT auto-login. Return needsConfirmation: false
+    // so the UI can redirect to the login screen.
+    return { error: null, needsConfirmation: false };
   }
 
   /**
