@@ -52,6 +52,9 @@ function CreateClanForm({
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Default accent color for the create button
+  const accentColor = '#00f5ff';
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -143,8 +146,8 @@ function CreateClanForm({
           onClick={handleSubmit}
           disabled={loading || name.length < 3 || tag.length < 2}
           style={{
-            flex: 1, background: '#001510', border: `1px solid ${color}66`,
-            color: color, padding: '10px', cursor: loading ? 'wait' : 'pointer',
+            flex: 1, background: '#001510', border: `1px solid ${accentColor}66`,
+            color: accentColor, padding: '10px', cursor: loading ? 'wait' : 'pointer',
             fontFamily: 'var(--font-mono)', fontSize: '9px',
             opacity: (name.length < 3 || tag.length < 2) ? 0.5 : 1,
           }}
