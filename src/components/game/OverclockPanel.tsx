@@ -21,24 +21,24 @@ interface OverclockPanelProps {
 
 const BRANCH_ICONS: Record<PerkBranch, React.ReactNode> = {
   VOLTAGE: <Zap size={9} />,
-  SIGNAL:  <Wifi size={9} />,
+  SIGNAL: <Wifi size={9} />,
   THERMAL: <Cpu size={9} />,
   ENTROPY: <Flame size={9} />,
   QUANTUM: <Infinity size={9} />,
 };
 
 const SKILL_ICON_EL: Record<string, React.ReactNode> = {
-  Zap:      <Zap size={8} />,
-  Wifi:     <Wifi size={8} />,
-  Flame:    <Flame size={8} />,
-  Shuffle:  <Shuffle size={8} />,
+  Zap: <Zap size={8} />,
+  Wifi: <Wifi size={8} />,
+  Flame: <Flame size={8} />,
+  Shuffle: <Shuffle size={8} />,
   Infinity: <Infinity size={8} />,
 };
 
 // Icon name per branch (matches BRANCH_SKILLS in SkillPlugin)
 const BRANCH_SKILL_ICON: Record<PerkBranch, string> = {
   VOLTAGE: 'Zap',
-  SIGNAL:  'Wifi',
+  SIGNAL: 'Wifi',
   THERMAL: 'Flame',
   ENTROPY: 'Shuffle',
   QUANTUM: 'Infinity',
@@ -46,37 +46,37 @@ const BRANCH_SKILL_ICON: Record<PerkBranch, string> = {
 
 const TIER_COLORS = [
   '#5a6a7a', '#00f5ff', '#ffaa00', '#ff0080', '#39ff14',
-  '#ffffff',  '#cc44ff', '#ff8800', '#00ff88', '#ff0080',
-  '#44ddff',  '#ffcc00', '#ff44aa', '#88ff44', '#ffffff',
+  '#ffffff', '#cc44ff', '#ff8800', '#00ff88', '#ff0080',
+  '#44ddff', '#ffcc00', '#ff44aa', '#88ff44', '#ffffff',
 ];
 
 const MILESTONE_STAGES = [25, 50, 100, 200];
 const BRANCHES: PerkBranch[] = ['VOLTAGE', 'SIGNAL', 'THERMAL', 'ENTROPY', 'QUANTUM'];
 
 export const OverclockPanel: React.FC<OverclockPanelProps> = ({ engine }) => {
-  const highestStage    = useGameState(engine, s => s.highestStage ?? s.stage);
-  const stage           = useGameState(engine, s => s.stage);
-  const overclockCount  = useGameState(engine, s => s.overclockCount);
+  const highestStage = useGameState(engine, s => s.highestStage ?? s.stage);
+  const stage = useGameState(engine, s => s.stage);
+  const overclockCount = useGameState(engine, s => s.overclockCount);
   const totalOverclocks = useGameState(engine, s => s.totalOverclocks ?? 0);
-  const overclockTier   = useGameState(engine, s => s.overclockTier ?? 0);
-  const upgrades        = useGameState(engine, s => s.overclockUpgrades ?? {});
+  const overclockTier = useGameState(engine, s => s.overclockTier ?? 0);
+  const upgrades = useGameState(engine, s => s.overclockUpgrades ?? {});
 
   const [confirming, setConfirming] = useState(false);
-  const [pulse, setPulse]           = useState(false);
+  const [pulse, setPulse] = useState(false);
 
-  const plugin     = engine.getPlugin<OverclockPlugin>('overclock');
-  const gain       = calculateOverclockGain(highestStage, overclockTier);
+  const plugin = engine.getPlugin<OverclockPlugin>('overclock');
+  const gain = calculateOverclockGain(highestStage, overclockTier);
   const canOverclock = gain > 0;
-  const available  = plugin?.getAvailableOCT() ?? 0;
-  const spent      = plugin?.getSpentOCT() ?? 0;
+  const available = plugin?.getAvailableOCT() ?? 0;
+  const spent = plugin?.getSpentOCT() ?? 0;
 
-  const isMaxTier         = overclockTier >= TIER_NAMES.length - 1;
-  const tierName          = TIER_NAMES[overclockTier] ?? TIER_NAMES[TIER_NAMES.length - 1];
-  const tierColor         = TIER_COLORS[overclockTier] ?? '#ffffff';
-  const tierProgress      = (totalOverclocks % 3) / 3;
+  const isMaxTier = overclockTier >= TIER_NAMES.length - 1;
+  const tierName = TIER_NAMES[overclockTier] ?? TIER_NAMES[TIER_NAMES.length - 1];
+  const tierColor = TIER_COLORS[overclockTier] ?? '#ffffff';
+  const tierProgress = (totalOverclocks % 3) / 3;
   const newTierAfterReset = calculateTier(totalOverclocks + 1);
-  const tierWillIncrease  = newTierAfterReset > overclockTier;
-  const nextMilestone     = MILESTONE_STAGES.find(s => s > highestStage);
+  const tierWillIncrease = newTierAfterReset > overclockTier;
+  const nextMilestone = MILESTONE_STAGES.find(s => s > highestStage);
 
   useEffect(() => {
     if (!canOverclock) return;
@@ -139,7 +139,7 @@ export const OverclockPanel: React.FC<OverclockPanelProps> = ({ engine }) => {
           {TIER_NAMES.map((name, i) => {
             const tc = TIER_COLORS[i] ?? '#ffffff';
             const isCurrent = i === overclockTier;
-            const isPast    = i < overclockTier;
+            const isPast = i < overclockTier;
             return (
               <div
                 key={i}
@@ -267,10 +267,10 @@ export const OverclockPanel: React.FC<OverclockPanelProps> = ({ engine }) => {
 
               {/* Perks */}
               {branchPerks.map(perk => {
-                const level    = getOverclockPerkLevel(upgrades, perk.id);
-                const maxed    = level >= perk.maxLevel;
+                const level = getOverclockPerkLevel(upgrades, perk.id);
+                const maxed = level >= perk.maxLevel;
                 const unlocked = isPerkUnlocked(perk, upgrades, overclockTier);
-                const canBuy   = plugin?.canBuyPerk(perk.id) ?? false;
+                const canBuy = plugin?.canBuyPerk(perk.id) ?? false;
 
                 if (!unlocked) {
                   return (
@@ -396,7 +396,7 @@ export const OverclockPanel: React.FC<OverclockPanelProps> = ({ engine }) => {
         {!canOverclock ? (
           <div className="text-center">
             <div className="font-pixel" style={{ color: '#2a2a3a', fontSize: '6px', letterSpacing: '1px', lineHeight: 2 }}>
-              REACH STAGE 10 TO UNLOCK REBOOT
+              REACH STAGE 500 TO UNLOCK REBOOT
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: '#1a2a1a', marginTop: 2 }}>
               higher peak stage = exponentially more OCT
