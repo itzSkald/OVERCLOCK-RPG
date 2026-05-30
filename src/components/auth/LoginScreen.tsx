@@ -8,19 +8,34 @@ interface LoginScreenProps {
   onSwitchToReset: () => void;
 }
 
+const ERROR_MESSAGES: Record<string, string> = {
+  USERNAME_NOT_FOUND: 'HANDLE NOT FOUND. CHECK YOUR USERNAME.',
+  'Invalid login credentials': 'INVALID CREDENTIALS. CHECK YOUR KEY.',
+  'Email not confirmed': 'CONFIRM YOUR EMAIL BEFORE LOGGING IN.',
+};
+
+function friendlyError(raw: string): string {
+  return ERROR_MESSAGES[raw] ?? raw.toUpperCase();
+}
+
 export const LoginScreen: React.FC<LoginScreenProps> = ({ authPlugin, onSwitchToRegister, onSwitchToReset }) => {
-  const [email, setEmail] = useState('');
+  const [handle, setHandle] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) return;
+    const trimmed = handle.trim();
+    if (!trimmed || !password) return;
     setError('');
     setLoading(true);
-    const { error: err } = await authPlugin.signIn(email, password);
+    const { error: err } = await authPlugin.signInWithUsername(trimmed, password);
     setLoading(false);
-    if (err) setError(err);
+    if (err) setError(friendlyError(err));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleLogin();
   };
 
   return (
@@ -45,21 +60,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ authPlugin, onSwitchTo
             {'> AUTHENTICATION REQUIRED'}
           </div>
 
-          <TerminalInput
-            label="ACCESS EMAIL"
-            value={email}
-            onChange={setEmail}
-            type="email"
-            placeholder="user@domain.net"
-          />
+          <div onKeyDown={handleKeyDown}>
+            <TerminalInput
+              label="HACKER HANDLE"
+              value={handle}
+              onChange={v => setHandle(v.toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 12))}
+              placeholder="GHOST_RUNNER"
+            />
 
-          <TerminalInput
-            label="SECURITY KEY"
-            value={password}
-            onChange={setPassword}
-            type="password"
-            placeholder="••••••••"
-          />
+            <TerminalInput
+              label="SECURITY KEY"
+              value={password}
+              onChange={setPassword}
+              type="password"
+              placeholder="••••••••"
+            />
+          </div>
 
           {error && (
             <div className="mb-4 font-pixel glow-red" style={{ color: '#ff2222', fontSize: '7px', lineHeight: '1.8' }}>
