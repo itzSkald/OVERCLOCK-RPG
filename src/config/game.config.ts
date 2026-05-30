@@ -42,8 +42,8 @@ export const ENGINE_CONFIG = {
 // ── SAVE ─────────────────────────────────────────────────────────────────────
 
 export const SAVE_CONFIG = {
-  /** Auto-save interval in milliseconds. */
-  autoSaveIntervalMs: 30_000,
+  /** Auto-save interval in milliseconds (5 minutes). */
+  autoSaveIntervalMs: 5 * 60 * 1000,
   /** Schema version stamped on every save. Increment when the save shape changes. */
   schemaVersion: 1,
   /** Minimum offline seconds before idle-gold calculation kicks in. */
@@ -52,6 +52,21 @@ export const SAVE_CONFIG = {
   offlineGoldMultiplier: 0.5,
   /** Maximum offline seconds that count toward idle gold (8 hours). */
   offlineCapSeconds: 8 * 3600,
+} as const;
+
+// ── SKILL POINTS ─────────────────────────────────────────────────────────────
+
+export const SKILL_POINT_CONFIG = {
+  /** Stages at which skill points are awarded. Each milestone grants 1 SP. */
+  milestones: [
+    50, 100, 150, 200, 250,
+    500, 750, 1000,
+    1500, 2000, 2500, 3000,
+    4000, 5000, 6000, 7000, 8000, 9000, 10000,
+    15000, 20000, 25000, 30000, 40000, 50000,
+    75000, 100000, 150000, 200000, 250000,
+    300000, 400000, 500000, 750000, 999999,
+  ],
 } as const;
 
 // ── TAP ──────────────────────────────────────────────────────────────────────

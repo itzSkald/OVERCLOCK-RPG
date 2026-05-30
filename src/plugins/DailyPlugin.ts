@@ -1,4 +1,4 @@
-import type { IPlugin, IEngine, GameState, GameEvent, Player } from '../engine/types';
+import type { IPlugin, IEngine, GameState, GameEvent, Player, TableSchema } from '../engine/types';
 import type { AuthPlugin } from './AuthPlugin';
 import { CHALLENGE_TEMPLATES, DAILY_CONFIG } from '../config/game.config';
 
@@ -54,6 +54,31 @@ export class DailyPlugin implements IPlugin {
   id = 'daily';
   dependencies = ['auth'];
   stateKeys = [] as (keyof GameState)[];
+
+  /** Define the database table this plugin requires - auto-created on boot */
+  schema: TableSchema[] = [{
+    name: 'daily_challenges',
+    columns: [
+      { name: 'id', type: 'uuid', primaryKey: true, default: 'gen_random_uuid()' },
+      { name: 'user_id', type: 'uuid', nullable: false },
+      { name: 'challenge_type', type: 'text', nullable: false },
+      { name: 'challenge_label', type: 'text', nullable: false },
+      { name: 'target_value', type: 'integer', nullable: false },
+      { name: 'current_value', type: 'integer', nullable: false, default: '0' },
+      { name: 'completed', type: 'boolean', nullable: false, default: 'false' },
+      { name: 'reward_gold', type: 'integer', nullable: false, default: '0' },
+      { name: 'challenge_date', type: 'date', nullable: false },
+      { name: 'created_at', type: 'timestamptz', nullable: false, default: 'now()' },
+    ],
+    indexes: [
+      { name: 'idx_daily_challenges_user_date', columns: ['user_id', 'challenge_date'] },
+    ],
+    rls: [
+      { name: 'daily_challenges_select_own', operation: 'SELECT', using: 'auth.uid() = user_id' },
+      { name: 'daily_challenges_insert_own', operation: 'INSERT', withCheck: 'auth.uid() = user_id' },
+      { name: 'daily_challenges_update_own', operation: 'UPDATE', using: 'auth.uid() = user_id' },
+    ],
+  }];
 
   private engine!: IEngine;
   private challenges: DailyChallenge[] = [];
